@@ -4,8 +4,10 @@
 // ------ Dropbox WebApp settings ------ 
 // PATH & APP KEY from Dropbox Developer Console for
 // MKTURK.HTML & LIVEPLOT.HTML
-var DBX_CLIENT_ID = "2m9hmv7q45kwren"
-var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/"
+//var DBX_CLIENT_ID = "2m9hmv7q45kwren"
+//var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/"
+var DBX_CLIENT_ID = "7niq4ezmfinnfgy"
+var DVX_REDIRECT_URI_ROOT = "https://elizabethyoo.github.io/mkturk/public/mkturk.html"
 
 // ------ Subject settings ------ 
 var subjectlist = ["ExampleSubject"];
