@@ -16,15 +16,12 @@
 
 // MKTURK
 //var DBX_CLIENT_ID = "2m9hmv7q45kwren"
-var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/"
+//var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/"
 
 //Liz 
 var DBX_CLIENT_ID = "7niq4ezmfinnfgy"
 //var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/"
-//var DBX_REDIRECT_URI_ROOT = "https://docs.google.com/a/columbia.edu/document/d/e/2PACX-1vTWHwOSa5Ii3zJurZEqOqGlGXXNr5JNjJFEC52GC6Cu4tTuo3ZuZSK13bD51O8Ihz7jB94ac7ZrdXy1/pub"
-
-//Liz's super lame website 	
-//var DBX_REDIRECT_URI_ROOT = "https://www.columbia.edu/~ecy2109/"
+//var DBX_REDIRECT_URI_ROOT = "https://elizabethyoo.github.io/mkturk/public/mkturk.html"
 
 
 
