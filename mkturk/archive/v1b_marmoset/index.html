@@ -1,0 +1,2167 @@
+<!doctype html>
+
+<head>
+<meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/56android/installtohomescreen -->
+
+<meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense -->
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.2/dropbox.min.js"></script>
+
+<script src="mturkautomator.js" type="text/javascript"></script>
+
+<script>
+
+
+//TO DO:
+// status bar with Monkey name, stage #, and other parameters
+// force stage for automator
+// master task x image list
+// webRTC
+//		http://www.html5rocks.com/en/tutorials/webrtc/basics/
+//		http://www.html5rocks.com/en/tutorials/webrtc/datachannels/
+//		https://shanetully.com/2014/09/a-dead-simple-webrtc-example/
+//		http://peerjs.com/
+// movies+concurrent sound
+
+// ---reward scheduling
+// ---online parameter modification
+// multiple subjects (gui)
+// closed-loop interaction (gui)
+// ----training (algorithm)
+// ----webcam or snapshots (in the future when it becomes available on chrome, use mediarecoder: https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)
+// ----package images for loading
+// ----photosensor bar
+// ----battery status & timer
+// ----subject list
+// ----vitals: task time, total trials, %correct, estimated juice, battery life
+
+// DROPBOX STUFF
+	var client = new Dropbox.Client({key: "3rd6bco8cdmcadz"}); // Dropbox.client help: http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html
+	var showError = function(error){console.log(error.status)};
+
+	// Dropbox: authenticate
+	client.authenticate(function(error,client){
+		if (error){
+			return showError(error);
+		}
+		console.log('success: client authenticated');
+	});
+
+	// Dropbox: Show client info
+	client.getAccountInfo(function(error, accountInfo) {
+	  if (error) {
+	    return showError(error);  // Something went wrong.
+	  }
+	  console.log("Hello, Dropbox User " + accountInfo.name + "!");
+	});
+
+
+	//Get file list from dropbox diretory
+	function getFileListDropbox() {
+		return new Promise(function(resolve,reject){
+	        client.readdir(trial.datadir,function(error,string,filestat,filestat_array){
+				if (error){
+					return showError(error); //Something went wrong
+				}
+				console.log("success: read directory ");
+
+				var q2=0;
+				for (var q = 0; q <= filestat_array.length-1; q++){
+					if (filestat_array[q].isFile == true && filestat_array[q].name.indexOf(trial.subjid) != -1){
+						datafiles[q2] = [filestat_array[q].name,filestat_array[q].modifiedAt.toISOString()];
+						q2++;
+					}
+				}
+
+				datafiles.sort(function (a,b){
+					if (a > b){
+						return -1;
+					}
+					if (a < b){
+						return 1;
+					}
+					return 0;
+				}); //sort in descending order
+
+				resolve(1);
+			})
+		}).then();
+	}
+
+	function readPerformanceHistoryfromDropbox(filenum){
+		return new Promise(function(resolve,reject){
+	        client.readFile(trial.datadir + datafiles[filenum][0],function(error,string,filestat,httpinfo){
+				if (error){
+					return showError(error); //Something went wrong
+				}
+				console.log("success: read file size " + filestat.size);
+				var file ={data: JSON.parse(string)};
+
+			if (typeof(file.data[0].Weight) != "undefined"){
+				env["weight"] = file.data[0].Weight;
+			}
+			else{
+				env["weight"] = 10;
+			}
+			env["species"] = file.data[0].Species;
+			env["homecage"] = file.data[0].Homecage;
+			env["separated"] = file.data[0].Separated;
+			env["liquid"] = file.data[0].Liquid;
+			env["tablet"] = file.data[0].Tablet;
+			env["pump"] = file.data[0].Pump;
+			trial["objectlist"] = file.data[0].TestedObjects;
+			trial["nway"] = file.data[0].Nway;
+			trial["samplegrid"] = file.data[0].SampleGridIndex;
+			trial["testgrid"] = file.data[0].TestGridIndex;
+			trial["rewardStage"] = file.data[0].RewardStage
+			trial["rewardper1000"] = file.data[0].RewardPer1000Trials;
+			// trial.reward = file.data[0].RewardDuration;
+			trial["punish"] = file.data[0].PunishTimeOut;
+			trial["fixationdur"] = file.data[0].FixationDuration;
+			trial["fixationradius"] = file.data[0].FixationRadius;
+			trial["fixationmove"] = file.data[0].FixationMove;
+			trial["sampleON"] = file.data[0].SampleON;
+			trial["sampleOFF"] = file.data[0].SampleOFF;
+			trial["keepSampleON"] = file.data[0].KeepSampleON;
+			trial["hidetestdistractors"] = file.data[0].HideTestDistractors;
+			trial["sampleblocksize"] = file.data[0].SampleBlockSize;
+			trial["nstickyresponse"] = file.data[0].NStickyResponse;
+			trial["imageFolderSample"] = file.data[0].ImageFolderSample;
+			trial["imageFolderTest"] = file.data[0].ImageFolderTest;
+			trial["sampleScale"] = file.data[0].SampleScale;
+			trial["testScale"] = file.data[0].TestScale;			
+			trial["automator"] = file.data[0].Automator;
+
+			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
+			}
+			else if (trial.automator == 1){
+				funcreturn = updateTask1("readtaskstageonly"); //read task stage only
+				trialhistory.trainingstage[trialhistory.current]=funcreturn;
+			}
+			else if (trial.automator == 2){
+				funcreturn = updateTask2("readtaskstageonly"); //read task stage only
+				trialhistory.trainingstage[trialhistory.current]=funcreturn;
+			}
+			else if (trial.automator == 3){
+				funcreturn = updateTask3("readtaskstageonly"); //read task stage only
+				trialhistory.trainingstage[trialhistory.current]=funcreturn;
+			}
+
+			if (typeof(trial.automator) == "undefined" || trial.automator == 0 || trial.automator != trial.currentAutomator){
+			}
+			else {
+			  	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
+			  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){
+			  			trialhistory.correct[trialhistory.current]=1;
+			  		}
+			  		else {
+			  			trialhistory.correct[trialhistory.current]=0;
+			  		}
+			  		trialhistory.current++;
+			  	}
+			}
+			resolve(1);
+			})
+		}).then();
+	}
+
+	//Read parameter file in dropbox
+	function readParametersfromDropbox() {
+		return new Promise(function(resolve,reject){
+	        client.readFile(paramfile.name,function(error,string,filestat,httpinfo){
+				if (error){
+					console.log("no parameter file found for subject " + trial.subjid);
+					resolve(1);
+					return showError(error); //Something went wrong
+				}
+				console.log("success: read parameter file size " + filestat.size);
+				paramfile.data=JSON.parse(string);
+				paramfile.ver=filestat.versionTag;
+				paramfile.date=filestat.modifiedAt;
+
+				// Set parameters
+				env["weight"] = paramfile.data[0].Weight;
+				env["species"] = paramfile.data[0].Species;
+				env["homecage"] = paramfile.data[0].Homecage;
+				env["separated"] = paramfile.data[0].Separated;
+				env["liquid"] = paramfile.data[0].Liquid;
+				env["tablet"] = paramfile.data[0].Tablet;
+				env["pump"] = paramfile.data[0].Pump;
+				trial["objectlist"] = paramfile.data[0].TestedObjects;
+				trial["nway"] = paramfile.data[0].Nway;
+				trial["fixationgridindex"] = paramfile.data[0].FixationGridIndex;
+				trial["fixationusessample"] = paramfile.data[0].FixationUsesSample;
+				trial["samplegrid"] = paramfile.data[0].SampleGridIndex;
+				trial["testgrid"] = paramfile.data[0].TestGridIndex;
+				trial["rewardStage"] = paramfile.data[0].RewardStage;
+				trial["rewardper1000"] = paramfile.data[0].RewardPer1000Trials;
+				trial["punish"] = paramfile.data[0].PunishTimeOut;
+				trial["fixationdur"] = paramfile.data[0].FixationDuration;
+				trial["fixationradius"] = paramfile.data[0].FixationRadius;
+				trial["fixationmove"] = paramfile.data[0].FixationMove;
+				trial["sampleON"] = paramfile.data[0].SampleON;
+				trial["sampleOFF"] = paramfile.data[0].SampleOFF;
+				trial["keepSampleON"] = paramfile.data[0].KeepSampleON;
+				trial["hidetestdistractors"] = paramfile.data[0].HideTestDistractors;
+				trial["sampleblocksize"] = paramfile.data[0].SampleBlockSize;
+				trial["nstickyresponse"] = paramfile.data[0].NStickyResponse;
+				trial["consecutivehitsITI"] = paramfile.data[0].ConsecutiveHitsITI;
+				trial["nconsecutivehitsforbonus"] = paramfile.data[0].NConsecutiveHitsforBonus;
+				trial["nrewardmax"] = paramfile.data[0].NRewardMax;
+				trial["imageFolderSample"] = paramfile.data[0].ImageFolderSample;
+				trial["imageFolderTest"] = paramfile.data[0].ImageFolderTest;
+				trial["sampleScale"] = paramfile.data[0].SampleScale;
+				trial["testScale"] = paramfile.data[0].TestScale;
+				trial["automator"] = paramfile.data[0].Automator;
+				trial["params"] = paramfile.name;
+				resolve(1);
+			})
+		}).then();
+	}
+
+	//Write parameter file to dropbox
+	function writeParameterstoDropbox() {
+			return new Promise(function(resolve,reject){
+		        var dataobj = [], datastr;
+	    	    dataobj.push({
+	    	    	Weight: env.weight,
+	    	    	Species: env.species,
+	    	    	Homecage: env.homecage,
+	    	    	Separated: env.separated,
+	    	    	Liquid: env.liquid,
+	    	    	Tablet: env.tablet,
+	    	    	Pump: env.pump,
+	    	    	TestedObjects: trial.objectlist,
+	    	    	Nway: trial.nway,
+	    	    	FixationUsesSample: trial.fixationusessample,
+	    	    	SampleGridIndex: trial.samplegrid,
+	    	    	TestGridIndex: trial.testgrid,
+	    	    	RewardStage: trial.rewardStage,
+	    	    	RewardPer1000Trials: trial.rewardper1000,
+	    	    	PunishTimeOut: trial.punish,
+	    	    	FixationDuration: trial.fixationdur,
+	    	    	FixationRadius: trial.fixationradius,
+	    	    	FixationMove: trial.fixationmove,
+	    	    	SampleON: trial.sampleON,
+	    	    	SampleOFF: trial.sampleOFF,
+	    	    	KeepSampleON: trial.keepSampleON,
+	    	    	HideTestDistractors: trial.hidetestdistractors,
+	    	    	SampleBlockSize: trial.sampleblocksize,
+	    	    	NStickyResponse: trial.nstickyresponse,
+					ConsecutiveHitsITI: trial.consecutivehitsITI,
+					NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
+					NRewardMax: trial.nrewardmax,	    	    	
+	    	    	ImageFolderSample: trial.imageFolderSample,
+	    	    	ImageFolderTest: trial.imageFolderTest,
+	    	    	SampleScale: trial.sampleScale,
+	    	    	TestScale: trial.testScale,
+	    	    	Automator: trial.automator,
+	    	    	// RewardDuration: trial.reward,
+	    	    });
+	    	    datastr = JSON.stringify(dataobj);
+				client.writeFile(trial.params,datastr,function(error,filestat){
+					if (error){
+						return showError(error); //Something went wrong
+					}
+					console.log("success: file size " + filestat.size);
+					resolve(1);
+				})
+			}).then();
+		}
+
+
+	// Promise: load image from Dropbox
+	function loadSampleImagefromDropbox(src,idx) {
+		return new Promise(function(resolve,reject){
+			imagesSamplePack[curridx+idx] = new Image();
+			client.makeUrl(imagesSample.folder + src + ".png",{download: 1},function(error,url){
+				if (error){
+					return showError(error); //Something went wrong.
+				}
+				imagesSamplePack[curridx+idx].src=url.url;
+				imagesSamplePack[curridx+idx].onload = function(){
+					console.log('loaded image' + (curridx+idx));
+
+				renderBlank();
+				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
+				var visible_ctxt = blank_canvasobj.getContext('2d');
+				visible_ctxt.textBaseline = "hanging";
+				visible_ctxt.fillStyle = "white";
+				visible_ctxt.font = "20px Verdana";
+				visible_ctxt.fillText('Loaded image ' + (curridx+idx),20.5,20.5);
+				resolve(curridx+idx)
+				}
+			});
+		}).then();
+	}
+
+	// Promise: load image from Dropbox
+	function loadTestImagefromDropbox(src,idx) {
+		return new Promise(function(resolve,reject){
+			imagesTestPack[curridx+idx] = new Image();
+			client.makeUrl(imagesTest.folder + src + ".png",{download: 1},function(error,url){
+				if (error){
+					return showError(error); //Something went wrong.
+				}
+				imagesTestPack[curridx+idx].src=url.url;
+				imagesTestPack[curridx+idx].onload = function(){
+					console.log('loaded image' + (curridx+idx));
+
+				renderBlank();
+				var blank_canvasobj=document.getElementById("canvas"+canvas.blank);
+				var visible_ctxt = blank_canvasobj.getContext('2d');
+				visible_ctxt.textBaseline = "hanging";
+				visible_ctxt.fillStyle = "white";
+				visible_ctxt.font = "20px Verdana";
+				visible_ctxt.fillText('Loaded image ' + (curridx+idx),125.5,20.5);
+				resolve(curridx+idx)
+				}
+			});
+		}).then();
+	}
+
+	function loadSoundfromDropbox(src,idx){
+		return new Promise(function(resolve,reject){
+			client.makeUrl(sounds.folder + src + ".wav",{download: 1},function(error,url){
+				if (error){
+					return showError(error); //Something went wrong
+				}
+				var request = new XMLHttpRequest();
+				request.open('GET',url.url,'true');
+				request.responseType = 'arraybuffer';
+
+				//Decode asychnronously
+				request.onload = function(){
+					audiocontext.decodeAudioData(request.response,function(buffer){
+						sounds.buffer[idx] = buffer;
+						resolve(idx);
+					}, function(){console.log('audio load error')})
+				}
+				request.send();
+			})
+		}).then();
+	}
+
+// asynchronous image capture
+function takephoto(currtrial,currstage){
+	canvascaptureobj=document.getElementById('canvascapture');
+
+	canvascaptureobj.setAttribute('width',videoobj.clientWidth);
+	canvascaptureobj.setAttribute('height',videoobj.clientHeight);
+
+	var context = canvascaptureobj.getContext('2d');
+	context.drawImage(videoobj,0,0,videoobj.clientWidth,videoobj.clientHeight);
+
+	var data = canvascaptureobj.toDataURL('image/png');
+    var imageBufferArray = _base64ToArrayBuffer(data);
+	client.writeFile("/MonkeyTurk/imagecapture/" + trial.subjid + "/imcapture" + currtrial + "_" + currstage + ".png",imageBufferArray,function(error,filestat){
+		if (error){
+			return showError(error); //Something went wrong
+		}
+		console.log("success: file size " + filestat.size);
+	});
+}
+
+	function writeDatatoDropbox() {
+		return new Promise(function(resolve,reject){
+	        var dataobj = [], datastr;
+    	    dataobj.push({
+    	    	Subject: trial.subjid,
+    	    	Weight: env.weight,
+    	    	Species: env.species,
+    	    	Homecage: env.homecage,
+    	    	Separated: env.separated,
+    	    	Liquid: env.liquid,
+    	    	Tablet: env.tablet,
+    	    	Pump: env.pump,
+    	    	TestedObjects: trial.objectlist,
+    	    	Nway: trial.nway,
+    	    	FixationUsesSample: trial.fixationusessample,
+    	    	SampleGridIndex: trial.samplegrid,
+    	    	TestGridIndex: trial.testgrid,
+    	    	ImageFolderSample: trial.imageFolderSample,
+    	    	ImageFolderTest: trial.imageFolderTest,
+    	    	RewardStage: trial.rewardStage,
+    	    	RewardPer1000Trials: trial.rewardper1000,
+    	    	RewardDuration: trial.reward,
+    	    	PunishTimeOut: trial.punish,
+    	    	FixationDuration: trial.fixationdur,
+    	    	FixationRadius: trial.fixationradius,
+    	    	FixationMove: trial.fixationmove,
+    	    	SampleON: trial.sampleON,
+    	    	SampleOFF: trial.sampleOFF,
+    	    	KeepSampleON: trial.keepSampleON,
+    	    	HideTestDistractors: trial.hidetestdistractors,
+    	    	SampleBlockSize: trial.sampleblocksize,
+    	    	NStickyResponse: trial.nstickyresponse,
+    	    	ConsecutiveHitsITI: trial.consecutivehitsITI,
+    	    	NConsecutiveHitsforBonus: trial.nconsecutivehitsforbonus,
+    	    	NRewardMax: trial.nrewardmax,
+    	    	Automator: trial.automator,
+    	    	Params: trial.params,
+
+    	    	PreSequence: canvas.sequencepre,
+    	    	PreSequenceTimes: canvas.tsequencepre,
+    	    	ImageSequence: canvas.sequence,
+    	    	ImageSequenceTimes: canvas.tsequence,
+    	    	PostSequence: canvas.sequencepost,
+    	    	PostSequenceTimes: canvas.tsequencepost,
+    	    	PixelRatio: devicePixelRatio,
+    	    	BackingStoreRatio: backingStoreRatio,
+    	    	CanvasScale: canvasScale,
+    	    	WindowWidth: windowWidth,
+    	    	WindowHeight: windowHeight,
+    	    	XGridCenter: xgridcent,
+    	    	YGridCenter: ygridcent,
+    	    	HeadsUpFraction: canvas.headsupfraction,
+    	    	CanvasOffsetLeft: canvas.offsetleft,
+    	    	CanvasOffsetTop: canvas.offsettop,
+
+    	    	SampleScale: imagesSample.scale,
+    	    	TestScale: imagesTest.scale,
+    	    	SampleImageDir: imagesSample.folder,
+    	    	TestImageDir: imagesTest.folder,
+    	    	AllSampleSerials: imagesSample.serial,
+    	    	AllTestSerials: imagesTest.serial,
+
+    	    	FixationGridIndex: trial.fixationgrid,
+    	    	Sample: trial.sampleserial,
+    	    	Test: trial.testserial,
+    	    	Response: trial.response,
+    	    	CorrectItem: trial.correctItem,
+    	    	StartTime: trial.tstart,
+    	    	FixationXYT: trial.xytfixation,
+    	    	ResponseXYT: trial.xytresponse,
+    	    	BatteryLDT: battery.ldt,
+    	    	NReward: trial.nreward,
+    	    });
+    	    datastr = JSON.stringify(dataobj);
+			client.writeFile(trial.datadir + trial.filename,datastr,function(error,filestat){
+				if (error){
+					return showError(error); //Something went wrong
+				}
+				console.log("success: file size " + filestat.size);
+				resolve(1);
+			})
+		}).then();
+	}
+
+	// Asynchronous: Check for parmater file update
+	function checkParameterFileStatus(){
+		client.stat(paramfile.name,function(error,filestat){
+			if (error){
+				return showError(error); //Something went wrong
+			}
+			if (paramfile.ver != filestat.versionTag){
+				paramfile.ver=filestat.versionTag;
+				paramfile.date=filestat.modifiedAt;
+
+				trial.need2loadParameters=1;
+				trial.need2loadImages=1;
+
+				console.log('parameter file was updated ver=' + paramfile.ver);
+			}
+		})
+	}
+// DROPBOX STUFF (end)
+
+// CANVAS SETUP
+	// Sync: Setup heads-up display canvas
+	function setupCanvasHeadsUp(){
+		canvasobj=document.getElementById("canvasheadsup");
+
+		canvasobj.width=window.innerWidth;
+		canvasobj.height=Math.round(window.innerHeight*canvas.headsupfraction);
+		canvasobj.style.margin="0 auto";
+		canvas.offsettop = canvasobj.height;
+
+		if (canvas.headsupfraction == 0){
+			canvasobj.style.display="none";
+		}
+		else{
+			canvasobj.style.display="block";
+		}
+
+		var context=canvasobj.getContext('2d');
+		context.fillStyle="#202020";
+		context.fillRect(0,0,canvasobj.width,canvasobj.height);
+
+		canvasobj.addEventListener('mousedown',mousedown_listener,false);
+		canvasobj.addEventListener('touchstart',touchstart_listener,false);
+	}
+
+	// Sync: Setup canvas
+	function setupCanvas(id){
+		str="canvas" + id;
+		canvasobj=document.getElementById(str);
+
+		// center in page
+		canvasobj.style.top=canvas.offsettop + "px";
+		canvasobj.style.left=canvas.offsetleft + "px";
+		canvasobj.width=windowWidth-canvas.offsetleft;
+		canvasobj.height=windowHeight-canvas.offsettop;
+		canvasobj.style.margin="0 auto";
+
+		canvasobj.style.display="block"; //visible
+
+		// assign listeners
+		// handle touch & mouse behavior independently http://www.html5rocks.com/en/mobile/touchandmouse/
+		canvasobj.addEventListener('mousedown',mousedown_listener,false);
+		canvasobj.addEventListener('mousemove',mousemove_listener,false);
+		canvasobj.addEventListener('mouseup',mouseup_listener,false);
+		canvasobj.addEventListener('touchstart',touchstart_listener,false);
+		canvasobj.addEventListener('touchmove',touchmove_listener,false);
+		canvasobj.addEventListener('touchend',touchend_listener,false);
+
+		// store canvas size
+		canvasSize=[canvasobj.width, canvasobj.height];
+	} //setupCanvas
+
+	// Sync: Adjust canvas for the device pixel ratio & browser backing store size
+	// from http://www.html5rocks.com/en/tutorials/canvas/hidpi/#disqus_thread
+	function scaleCanvasforHiDPI(id){
+		if (devicePixelRatio !== backingStoreRatio){
+			str="canvas" + id;
+			canvasobj=document.getElementById(str);
+			context=canvasobj.getContext("2d");
+			var oldWidth = canvasobj.width;
+			var oldHeight = canvasobj.height;
+
+			canvasobj.width = oldWidth * canvasScale;
+			canvasobj.height = oldHeight * canvasScale;
+
+			canvasobj.style.width = windowWidth - canvas.offsetleft + "px";
+			canvasobj.style.height = windowHeight -canvas.offsettop + "px";
+			canvasobj.style.margin="0 auto";
+
+			context.scale(canvasScale,canvasScale);
+		} //if
+	} //scaleCanvasforHiDPI
+// CANVAS SETUP (end)
+
+
+function updateHeadsUpDisplay(){
+	var textobj = document.getElementById("headsuptext");
+
+	// Overall performance
+	var ncorrect = 0;
+	for (var i=0; i<=trial.correctItem.length-1; i++){
+  		if (trial.correctItem[i] == trial.response[i]){
+  			ncorrect++;
+  		}
+	}
+	var pctcorrect = Math.round(100 * ncorrect / trial.response.length);
+
+	// Task type
+	var task1 = "";
+	var task2 = "";
+	if (trial.rewardStage == 0){
+		task1 = "Fixation";
+	}
+	else if (trial.rewardStage == 1){
+		task1 = "Match to Sample var" + trial.imageFolderSample;
+		task2 = trial.sampleON + "ms, " + trial.nway + "-way, " + trial.objectlist.length + "-obj";
+	}
+
+	if (trial.displayoutofbounds == 1){
+		displayout = 'WARNING: Images presented outside canvas'		
+	}
+	else{
+		displayout='';
+	}
+
+
+	textobj.innerHTML = trial.subjid + ": <font color=green><b>" + pctcorrect + "%</b></font> " + "(" + ncorrect + " of " + trial.response.length +")" + "<br>" + "Estimated Reward: <font color=green><b>" + Math.round(trial.rewardper1000*ncorrect/1000) + "mL</b></font> (" + Math.round(trial.rewardper1000) + " per 1000)" + "<br> " + "<br>" + " Stage " + trial.currentstage + ": " + task1 + "<br>" + task2 + "<br>" + "<font color=red><b>" + displayout + "</b></font>"
+}
+
+// IMAGE DISPLAY
+	// Sync: buffer trial images
+	function bufferTrialImages(){
+		// (pre)render canvas (synchronous)
+		function renderCanvas(idxcv,idxim,usesample,grid){
+			var canvasobj=document.getElementById("canvas"+idxcv);
+			var context=canvasobj.getContext('2d');
+
+			// gray out the canvas
+			if (usesample==true){
+				context.fillStyle="#7F7F7F";
+				context.fillRect(0,0,canvasobj.width,canvasobj.height);
+
+				context.fillStyle="black";
+				context.fillRect(0,0,canvasobj.width,100);
+			}
+
+			var indpos
+			indpos=grid;
+
+			var xleft=[];
+			var ytop=[];
+			var xbound=[];
+			var ybound=[];
+			for (var i in idxim){
+				if (usesample==true){
+					xleft[i] = xgridcent[indpos[i]] - 0.5*imagesSample.wd*imagesSample.scale/canvasScale;
+					ytop[i] = ygridcent[indpos[i]] - 0.5*imagesSample.ht*imagesSample.scale/canvasScale;
+
+					context.drawImage(imagesSamplePack[imagesSample.packpointer[idxim[i]]],imagesSample.pixLR[idxim[i]][0],0,imagesSample.wd,imagesSample.ht,xleft[i],ytop[i],imagesSample.wd*imagesSample.scale/canvasScale,imagesSample.ht*imagesSample.scale/canvasScale);
+
+					xbound=[xleft[i], xleft[i]+imagesSample.wd*imagesSample.scale/canvasScale];
+					ybound=[ytop[i], ytop[i]+imagesSample.ht*imagesSample.scale/canvasScale];
+				}
+				else if (usesample==false && parseInt(i) == trial.correctItem[trial.current]){
+					xleft[i] = xgridcent[indpos[i]] - 0.5*imagesTest.wd*imagesTest.scale/canvasScale;
+					ytop[i] = ygridcent[indpos[i]] - 0.5*imagesTest.ht*imagesTest.scale/canvasScale;
+
+					context.drawImage(imagesTestPack[imagesTest.packpointer[idxim[i]]],imagesTest.pixLR[idxim[i]][0],0,imagesTest.wd,imagesTest.ht,xleft[i],ytop[i],imagesTest.wd*imagesTest.scale/canvasScale,imagesTest.ht*imagesTest.scale/canvasScale);
+
+					xbound[i]=[xleft[i], xleft[i]+imagesTest.wd*imagesTest.scale/canvasScale];
+					ybound[i]=[ytop[i], ytop[i]+imagesTest.ht*imagesTest.scale/canvasScale];
+				}
+				else if (usesample==false && parseInt(i) != trial.correctItem[trial.current]){
+					xleft[i] = xgridcent[indpos[i]] - 0.5*imagesTest.wd*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale;
+					ytop[i] = ygridcent[indpos[i]] - 0.5*imagesTest.ht*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale;
+
+					context.drawImage(imagesTestPack[imagesTest.packpointer[idxim[i]]],imagesTest.pixLR[idxim[i]][0],0,imagesTest.wd,imagesTest.ht,xleft[i],ytop[i],imagesTest.wd*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale,imagesTest.ht*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale);
+
+					xbound[i]=[xleft[i], xleft[i]+imagesTest.wd*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale];
+					ybound[i]=[ytop[i], ytop[i]+imagesTest.ht*imagesTest.scale*(1-trial.hidetestdistractors)/canvasScale];
+				}
+
+				// if (grid.length > 1 && trial.hidetestdistractors==1 && parseInt(i) != trial.correctItem[trial.current]){
+				// 	context.fillStyle="#7F7F7F";
+				// 	context.fillRect(xleft[i],ytop[i],imagesTest.wd*imagesTest.scale/canvasScale,imagesTest.ht*imagesTest.scale/canvasScale);
+
+				// 	xbound[i]=[xleft[i], xleft[i]+imagesTest.wd*imagesTest.scale/canvasScale];
+				// 	ybound[i]=[ytop[i], ytop[i]+imagesTest.ht*imagesTest.scale/canvasScale];
+				// } //gray out distractors
+
+				if (usesample == false){
+					if (xbound[i][0] < 0 || ybound[i][0] < 0
+						|| xbound[i][1] > canvasobj.width/canvasScale || ybound[i][1] > canvasobj.height/canvasScale)
+					{
+						trial.displayoutofbounds=1
+					}
+				}
+			};
+
+			// bounding boxes of images on canvas
+			return {
+				x: xbound,
+				y: ybound
+			};
+		}
+
+		//buffer (sample & test canvases)
+
+		//sample
+		if (trial.fixationusessample == 0){
+			renderCanvas(canvas.sample,[trial.sample[trial.current]],true,trial.samplegrid);
+		}
+		else if (trial.fixationusessample == 1){
+			boundingBoxFixation = renderCanvas(canvas.sample,[trial.sample[trial.current]],true,trial.samplegrid);
+		}
+		
+		//test
+		if (trial.keepSampleON==1){
+			renderCanvas(canvas.test,[trial.sample[trial.current]],true,trial.samplegrid);
+		}
+		boundingBoxesTest = renderCanvas(canvas.test,trial.test[trial.current],false,trial.testgrid);
+		canvas.buffered = 1;
+	}
+
+	// Promise: display trial images
+	function displayTrial(sequence,tsequence){
+		var resolveFunc
+		var errFunc
+		p = new Promise(function(resolve,reject){
+			resolveFunc = resolve;
+			errFunc = reject;
+		}).then(function(){
+			//console.log('displayed images')
+		});
+
+		var start = null;
+		function updateCanvas(timestamp){
+			if (!start) start = timestamp;
+			if (timestamp - start > tsequence[frame.current]){
+				//console.log('displaying frame' + currframe + ' ' + timestamp);
+
+				// Move canvas in front
+				var prev_canvasobj=document.getElementById("canvas"+canvas.front);
+				var curr_canvasobj=document.getElementById("canvas"+sequence[frame.current]);
+				if (canvas.front != canvas.blank){
+					prev_canvasobj.style.zIndex="0";
+				} // move back
+
+				if (sequence[frame.current] != canvas.blank){
+					curr_canvasobj.style.zIndex="100";
+					canvas.front = sequence[frame.current];
+				} // move to front
+				else{
+					canvas.front = canvas.blank;
+				}
+				
+				frame.shown[frame.current]=1;
+				frame.current++;
+			}; // if show new frame
+
+			// continue if not all frames shown
+			if (frame.shown[frame.shown.length-1] != 1){
+				window.requestAnimationFrame(updateCanvas);
+			}
+			else{
+				resolveFunc(1);
+			}
+		}
+
+		//requestAnimationFrame advantages: goes on next screen refresh and syncs to browsers refresh rate on separate clock (not js clock)
+		window.requestAnimationFrame(updateCanvas); // kick off async work
+		return p
+	} //displayTrial
+
+	function renderBlank(){
+		var canvasobj=document.getElementById("canvas"+canvas.blank);
+		var context=canvasobj.getContext('2d');
+
+		context.fillStyle="#7F7F7F";
+		context.fillRect(0,0,canvasobj.width,canvasobj.height);
+
+		context.fillStyle="black";
+		context.fillRect(0,0,canvasobj.width,100);
+	}
+
+	function renderReward(){
+		var canvasobj=document.getElementById("canvas"+canvas.reward);
+		var context=canvasobj.getContext('2d');
+		context.clearRect(0,0,canvasobj.width,canvasobj.height);
+		context.fillStyle="white";
+		context.fillRect(hgridcent-200,vgridcent-200,400,400);
+
+		// bar across top for photodiode
+		if (env.species == 'marmoset'){
+			context.fillStyle="black";
+			context.fillRect(0,0,canvasobj.width,100);
+		}
+	}
+
+	function renderPhotoReward(){
+		var canvasobj=document.getElementById("canvas"+canvas.photoreward);
+		var context=canvasobj.getContext('2d');
+		context.clearRect(0,0,canvasobj.width,canvasobj.height);
+		context.fillStyle="white";
+		context.fillRect(hgridcent-200,vgridcent-200,400,400);
+
+		// bar across top for photodiode
+		if (env.species == 'marmoset'){
+			context.fillStyle="white";
+			context.fillRect(0,0,canvasobj.width,100);
+		}
+
+	}
+
+
+	function renderPunish(){
+		var canvasobj=document.getElementById("canvas"+canvas.punish);
+		var context=canvasobj.getContext('2d');
+		context.clearRect(0,0,canvasobj.width,canvasobj.height);
+		context.fillStyle="black";
+		context.fillRect(hgridcent-200,vgridcent-200,400,400);
+
+		// bar across the top
+		context.fillStyle="black";
+		context.fillRect(0,0,canvasobj.width,100);
+	}
+
+	function renderTouchFixation(){
+		var canvasobj=document.getElementById("canvas"+canvas.touchfix);
+		var context=canvasobj.getContext('2d');
+		context.clearRect(0,0,canvasobj.width,canvasobj.height);
+
+		var rad = trial.fixationradius;
+		var xcent = xgridcent[trial.fixationgrid[trial.current]];
+		var ycent = ygridcent[trial.fixationgrid[trial.current]];
+
+		context.beginPath();
+		context.arc(xcent,ycent,rad,0*Math.PI,2*Math.PI);
+
+		if (env.species == "macaque"){
+			context.fillStyle="white";
+		}
+		else if (env.species == "marmoset"){
+			context.fillStyle="blue";
+		}
+
+		context.fill();
+		boundingBoxFixation.x = [xcent-rad, xcent+rad];
+		boundingBoxFixation.y = [ycent-rad, ycent+rad];
+
+		// //add eye fixation
+		// context.fillStyle="red";
+		// context.fillRect(xgridcent[4]-6,ygridcent[4]-6,12,12);
+
+		// // add red dot in center
+		// context.fillStyle="red";
+		// context.fillRect(xgridcent[trial.fixationgrid[trial.current]]+rad/2-6,xgridcent[trial.fixationgrid[trial.current]]-rad/2-6,12,12);
+
+		context.fillStyle="black";
+		context.fillRect(0,0,canvasobj.width,100);
+	}
+
+	function renderEyeFixation(){
+		var canvasobj=document.getElementById("canvas"+canvas.eyefix);
+		var context=canvasobj.getContext('2d');
+		context.clearRect(0,0,canvasobj.width,canvasobj.height);
+		context.fillStyle="red";
+		context.fillRect(hgridcent-6,vgridcent-6,12,12);
+	}
+
+// IMAGE DISPLAY (end)
+
+
+
+// STATES
+
+	// Promise: Select Subject
+	function subjidPromise(){
+		var resolveFunc
+		var errFunc
+		p = new Promise(function(resolve,reject){
+			resolveFunc = resolve;
+			errFunc = reject;
+		}).then(function(resolveval){console.log('User selected ' + resolveval)});
+
+		function *waitforclickGenerator(){
+			var imclicked =[-1];
+			while (true){
+				imclicked = yield imclicked;
+				resolveFunc(imclicked);
+			}
+		}
+
+		waitforClick = waitforclickGenerator(); // start async function
+		waitforClick.next(); //move out of default state
+		return p;
+	}
+
+	function subjectlist_listener(event){
+		console.log("subject selected");
+		trial.subjid = subjectlist[this.value];
+		subjectdialog.close();
+		waitforClick.next(1);
+		return
+	}
+
+
+	// Promise: fixation
+	function fixationPromise(){
+		var resolveFunc
+		var errFunc
+		p = new Promise(function(resolve,reject){
+			resolveFunc = resolve;
+			errFunc = reject;
+		}).then(); //function(resolveval){console.log('Fixation Promise resolved' + resolveval)});
+
+		function *waitforclickGenerator(){
+			var imclicked =[-1];
+			while (true){
+				imclicked = yield imclicked;
+				console.log('MOVED GENERATOR forward ' + trial.waitingforFixation)
+				resolveFunc(imclicked);
+			}
+		}
+
+		// trial.waitingforFixation = 1;
+		waitforClick = waitforclickGenerator(); // start async function
+		waitforClick.next(); //move out of default state
+
+		//Start timer
+		movefixationTimer = setTimeout(function(){trial.brokeFixation=1; clearTimeout(fixationTimer); waitforClick.next(1); },trial.fixationinterval);
+
+		return p;
+	}
+
+	// Promise: response
+	function responsePromise(){
+		var resolveFunc
+		var errFunc
+		p = new Promise(function(resolve,reject){
+			resolveFunc = resolve;
+			errFunc = reject;
+		}).then(function(resolveval){console.log('User clicked ' + resolveval)});
+
+		function *waitforclickGenerator(){
+			var imclicked =[-1];
+			while (true){
+				imclicked = yield imclicked;
+				resolveFunc(imclicked);
+			}
+		}
+
+		trial.waitingforResponse = 1;
+		waitforClick = waitforclickGenerator(); // start async function
+		waitforClick.next(); //move out of default state
+		return p;
+	}
+
+	//Asynch: play sound
+	function playSound(idx){
+		audiocontext.resume()
+		var source = audiocontext.createBufferSource(); // creates a sound source
+		source.buffer = sounds.buffer[idx];                    // tell the source which sound to play
+		if (idx==0){
+			gainNode.gain.value=0.15; //set boost pedal to 15% volume
+		}
+		else if (idx==2 | idx==3){
+			gainNode.gain.value=0.05; //set boost pedal to 5% volume
+		}
+
+		source.connect(gainNode);
+		// gainNode.connect(audiocontext.destination); //Connect boost pedal to output
+		// source.connect(audiocontext.destination);       // connect the source to the context's destination (the speakers)
+
+		source.start(0);                        // play the source now
+	}
+
+	// Promise: dispense reward (through audio control)
+	function dispenseReward(){
+		return new Promise(function(resolve,reject){
+			audiocontext.resume()
+			var oscillator = audiocontext.createOscillator();
+			gainNode.gain.value=1;
+
+			if (env.pump == 1){
+				oscillator.type='square'; //Square wave
+				oscillator.frequency.value=25; //frequency in hertz				
+			} //peristaltic (adafruit)
+			else if (env.pump==2){
+				oscillator.type='square'; //Square wave
+				oscillator.frequency.value=0.1; //frequency in hertz
+			} //submersible (TCS)
+			else if (env.pump==3){
+				oscillator.type='square'; //Square wave
+				oscillator.frequency.value=10; //frequency in hertz		
+			} //diaphragm (TCS)
+			else if (env.pump==4){
+				oscillator.type='square'; //Square wave
+				oscillator.frequency.value=0.1; //frequency in hertz				
+			} //piezoelectric 3ml/min (takasago)
+			else if (env.pump==5){
+				oscillator.type='square';
+				oscillator.frequency.value=0.1;
+			} //diaphragm new (TCS)
+			else if (env.pump==6){
+				oscillator.type='square'; //Square wave
+				oscillator.frequency.value=0.1; //frequency in hertz				
+			} //piezoelectric 7ml/min (takasago)
+
+			// oscillator.connect(audiocontext.destination); //Connect sound to output
+
+			// //var gainNode = audiocontext.createGainNode(); //Create boost pedal
+			// //gainNode.gain.value=0.3; //set boost pedal to 30% volume
+			oscillator.connect(gainNode);
+			// gainNode.connect(audiocontext.destination); //Connect boost pedal to output
+
+			// // oscillator.onended=function(){
+			// // 	console.log('done with reward pulse');
+			// // 	resolve(1);
+			// // }
+
+			var currentTime=audiocontext.currentTime;
+			oscillator.start(currentTime);
+			oscillator.stop(currentTime + trial.reward);
+			setTimeout(function(){console.log('sound done'); resolve(1);},trial.reward*1000);
+		}).then();
+	}
+
+	// Promise: punish time-out
+	function dispensePunish(){
+		return new Promise(function(resolve,reject){
+			setTimeout(function(){resolve(1);},trial.punish); //milliseconds
+		}).then();
+	}
+// STATES (end)
+
+
+
+// MOUSE & TOUCH EVENTS
+	function mousedown_listener(event){
+		if(typeof event === 'undefined'){
+			console.log('no click, loading images, initializing response promise');
+			return
+		};
+
+		var x = event.clientX
+		var y = event.clientY
+
+		if (y < canvas.offsettop){
+			//clicked on headsup display
+			if (videoobj.style.zIndex != 100){
+				if (trial.takephoto == 0){
+					videoobj.play();
+				}
+				videoobj.style.zIndex = 100;
+			}
+			else if (videoobj.style.zIndex != 0){
+				if (trial.takephoto == 0){
+					videoobj.pause();
+				}
+				videoobj.style.zIndex = 0;
+			}
+		}
+
+		if (trial.waitingforFixation > 0){
+			//determine if clicked on fixation dot
+			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
+				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
+				trial.brokeFixation = 0;
+				trial.xytfixation[trial.current]=[x,y,Math.round(performance.now())];
+				//Start timer
+				fixationTimer = setTimeout(function(){ trial.waitingforFixation=trial.waitingforFixation-1;clearTimeout(movefixationTimer); waitforClick.next(1);},trial.fixationdur);
+			} //if clicked fixation
+			else{
+			}
+		}
+
+		if (trial.waitingforResponse == 1){
+			//determine if clicked in test box
+			for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
+				if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
+					y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
+					trial.response[trial.current]=q;
+					trial.xytresponse[trial.current]=[x,y,Math.round(performance.now())];
+					waitforClick.next(1);
+					return
+				}
+			}
+		}
+	}
+
+	function mousemove_listener(event){
+		if (trial.waitingforFixation>0 && trial.brokeFixation==0){
+			var x = event.clientX
+			var y = event.clientY
+
+			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
+				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
+				//holding fixation
+			}
+			else{
+				// moved from fixation dot, cancel fixation timers
+				trial.brokeFixation = 1;
+				clearTimeout(fixationTimer);
+			}
+		}
+	}
+
+	function mouseup_listener(event){
+		if (trial.waitingforFixation>0 && trial.brokeFixation == 0){
+			// broke touch with fixation dot too early, cancel fixation timers
+			trial.brokeFixation = 1;
+			clearTimeout(fixationTimer);
+		}
+	}
+
+	function touchstart_listener(event){
+		event.preventDefault(); //prevents additional downstream call of click listener
+		if(typeof event === 'undefined'){
+			console.log('no click, loading images, initializing responsepromise');
+			return
+		};
+
+		var x = event.targetTouches[0].pageX - canvas.offsetleft
+		var y = event.targetTouches[0].pageY - canvas.offsettop
+		console.log(x + ',' + y + ',' + trial.waitingforFixation)
+
+		if (y < 0){
+			//clicked on headsup display
+			if (videoobj.style.zIndex != 100){
+				if (trial.takephoto == 0){
+					videoobj.play();
+				}
+				videoobj.style.zIndex = 100;
+			}
+			else if (videoobj.style.zIndex != 0){
+				if (trial.takephoto == 0){
+					videoobj.pause();
+				}
+				videoobj.style.zIndex = 0;
+			}
+		}
+
+		console.log('TOUCHED SCREEN, waitingforfixation=' + trial.waitingforFixation + ' waitingforresponse=' + trial.waitingforResponse)
+		if (trial.waitingforFixation > 0 & fixationcleared == 1){
+			//determine if clicked on fixation dot
+			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
+				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
+				trial.brokeFixation = 0;
+				trial.xytfixation[trial.current]=[x,y,Math.round(performance.now())];
+				//Start timer
+				console.log('acquired fixation, started timer' + trial.fixationdur)
+				fixationTimer = setTimeout(function(){console.log('started fixation timer');trial.waitingforFixation=trial.waitingforFixation-1;clearTimeout(movefixationTimer); waitforClick.next(1);},trial.fixationdur);
+				console.log('WAITING FOR FIXATION=' + trial.waitingforFixation + ' & TOUCHED FIXATION')
+			} //if clicked fixation
+			else{
+				if (trial.rewardStage == 0){
+					console.log('clicked outside fixation');
+					trial.xytfixation[trial.current]=[x,y,Math.round(performance.now())];
+					trial.waitingforFixation=0;
+					trial.brokeFixation = 1;
+					clearTimeout(movefixationTimer);
+					clearTimeout(fixationTimer);
+					waitforClick.next(0);
+				} //advance to punish for clicking outside fixation
+			}
+		}
+
+		if (trial.waitingforResponse == 1){
+				console.log('WAITING FOR RESPONSE, WAITINGFORFIXATION=' + trial.waitingforFixation + ' & TOUCHED SCREEN')
+			//determine if clicked in test box
+			for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
+				if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
+					y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
+					trial.response[trial.current]=q;
+					trial.xytresponse[trial.current]=[x,y,Math.round(performance.now())];
+					waitforClick.next(1);
+					return
+				}
+			}
+		}
+	}
+
+	function touchmove_listener(event){
+		if (trial.waitingforFixation>0 && trial.brokeFixation==0){
+			var x = event.targetTouches[0].pageX - canvas.offsetleft
+			var y = event.targetTouches[0].pageY - canvas.offsettop
+
+			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
+				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
+				//holding fixation
+			}
+			else{
+				// moved from fixation dot, cancel fixation timers
+				trial.brokeFixation = 1;
+				console.log('was fixating but moved out');
+				clearTimeout(fixationTimer);
+			}
+		}
+		else if (trial.waitingforFixation>0 && trial.brokeFixation==1){
+			//check if moved back into fixation
+			var x = event.targetTouches[0].pageX - canvas.offsetleft
+			var y = event.targetTouches[0].pageY - canvas.offsettop
+
+			if ( x >= boundingBoxFixation.x[0] && x <= boundingBoxFixation.x[1] &&
+				 y >= boundingBoxFixation.y[0] && y <= boundingBoxFixation.y[1]){
+
+				//gained fixation
+			console.log('regained fixation by moving back in before timer expired')
+				trial.brokeFixation = 0;
+				touchstart_listener(event);
+			}
+		}
+		//Allows dragging into response box
+		if (trial.waitingforResponse == 1){
+			var x = event.targetTouches[0].pageX - canvas.offsetleft
+			var y = event.targetTouches[0].pageY - canvas.offsettop
+
+			//determine if moved into a test box
+			for (var q=0; q<=boundingBoxesTest.x.length-1; q++){
+				if (x >= boundingBoxesTest.x[q][0] && x <= boundingBoxesTest.x[q][1] &&
+					y >= boundingBoxesTest.y[q][0] && y <= boundingBoxesTest.y[q][1]){
+					trial.response[trial.current]=q;
+					trial.xytresponse[trial.current]=[x,y,Math.round(performance.now())];
+					waitforClick.next(1);
+					return
+				}
+			}
+		}
+	}
+
+	function touchend_listener(event){
+		if (trial.waitingforFixation>0 && trial.brokeFixation == 0 && trial.fixationdur > 0){
+			// broke touch with fixation dot too early, cancel fixation timers
+			trial.brokeFixation = 1;
+			console.log('was fixating but lifted finger');
+			clearTimeout(fixationTimer);
+		}
+	}
+// MOUSE & TOUCH EVENTS (end)
+
+
+
+// HELPER FUNCTIONS
+
+	//Define spawn function to make generator work with Promises (from: https://gist.github.com/jakearchibald/31b89cba627924972ad6)
+	function spawn(generatorFunc) {
+	  function continuer(verb, arg) {
+	    var result;
+	    try {
+	      result = generator[verb](arg);
+	    } catch (err) {
+	      return Promise.reject(err);
+	    }
+	    if (result.done) {
+	      return result.value;
+	    } else {
+	      return Promise.resolve(result.value).then(onFulfilled, onRejected);
+	    }
+	  }
+	  var generator = generatorFunc();
+	  var onFulfilled = continuer.bind(continuer, "next");
+	  var onRejected = continuer.bind(continuer, "throw");
+	  return onFulfilled();
+	}
+
+	/* Randomize array element order in-place.  Using Fisher-Yates shuffle algorithm. http://bost.ocks.org/mike/shuffle/ */
+	// To test your shuffling algorithm: go to http://bost.ocks.org/mike/shuffle/compare.html
+	function shuffleArray(array){
+		// Expand to index vector if needed
+		if (array.length==1){
+			var len=array[0];
+			for (var i = 0; i<=len-1; i++){array[i]=i;}
+		}
+
+	    for (var i = array.length - 1; i > 0; i--) {
+	        var j = Math.floor(Math.random() * (i + 1));
+	        var temp = array[i];
+	        array[i] = array[j];
+	        array[j] = temp;
+	    }
+	    return array
+	}
+
+	function getTest(nway){
+		//draw category then draw images from that category
+		// randomly choose an image with that category (could also do a prototype)
+
+		// Generate cat list from sample images
+		var objectlist=[];
+		for (var i=0; i<=imagesSample.serial.length-1; i++){
+			if (objectlist.indexOf(imagesSample.obj[i]) == -1 && imagesSample.obj[i] != imagesSample.obj[trial.sample[trial.current]]){
+				objectlist[objectlist.length]=imagesSample.obj[i]; //add category
+			}//if
+		}//for
+
+		// Shuffle wrt categories
+		if (objectlist.length > 1){
+			shuffleArray(objectlist);
+		}
+
+		//Take the first nway-1 categories
+		var testArrayObj=[];
+		for (var i=0; i<=nway-2; i++){
+			testArrayObj[i]=objectlist[i];
+		}
+
+		//Insert sample object at end position
+		testArrayObj[nway-1]=imagesSample.obj[trial.sample[trial.current]];
+
+		// Shuffle wrt array position
+		var shuffleind=[];
+		shuffleind[0]=nway;
+		shuffleArray(shuffleind);
+		var testArrayObj_shuffleItems=[];
+		var correctItem = shuffleind[shuffleind.length-1];
+		for (var i=0; i<=nway-1; i++){
+			testArrayObj_shuffleItems[shuffleind[i]] = testArrayObj[i];
+		}
+
+		// Shuffle wrt images in a category
+		var testArray=[];
+		objshuffled = testArrayObj_shuffleItems;
+		for (var i=0; i<=nway-1; i++){
+			// Generate image list
+			var imlist=[];
+			for (var j=0; j<=imagesTest.serial.length-1; j++){
+				if (imagesTest.obj[j] == objshuffled[i]){
+					imlist[imlist.length]=j;
+				}
+			}
+			if (imlist.length > 1){
+				shuffleArray(imlist);
+			}
+			testArray[i]=imlist[0];
+		}
+
+		return {
+				correctItem: correctItem,
+				testArray: testArray
+			};
+	}
+
+	// convert base64 to buffer array (from: http://stackoverflow.com.80bola.com/questions/27524283/save-image-to-dropbox-with-data-from-canvas?rq=1)
+	function _base64ToArrayBuffer(base64){
+		base64 = base64.split('data:image/png;base64,').join('');
+		var binary_string =  window.atob(base64),
+		len = binary_string.length,
+		bytes = new Uint8Array( len ),
+		i;
+
+		for (i = 0; i < len; i++){
+			bytes[i] = binary_string.charCodeAt(i);
+		}
+		return bytes.buffer;
+	}
+
+function getImageList(images,foldernum){
+	images.serial = [];
+	images.obj = [];
+	images.packpointer = [];
+	images.packserial = [];
+	images.packpos = [];
+	images.pixLR = [];
+
+	var potentialImages = {
+		serial: [],
+		obj: [],
+	}
+
+	var imagesPack = {
+		packserial: [],
+	}
+
+	var perobj=1; //folder 0 or 4
+	var perobjvec=[];
+	if (foldernum == 1 || foldernum == 2 || foldernum == 3 || foldernum == 6 || foldernum == 7 || foldernum == 8 || foldernum == 10 || foldernum == 11){
+		perobj=100;
+	}
+	else if (foldernum == 5){
+		perobjvec=[12,8,10,12,6,12,8,10,12,12,8,10,6,14,6,6,12,10,8,6,6,8,6,8,12,6,12,6,8,6,10,12,6,6,12,8,10,12,6,12,8,10,12,12,8,10,6,14,6,6,12,10,8,32,24,6,8,12,8,6,10,12];
+		var objstart=[0];
+		var objend=[perobjvec[0]-1];
+		for (var i=1; i<=perobjvec.length-1; i++){
+			objstart[i]=objend[i-1]+1;
+			objend[i]=objstart[i]+perobjvec[i]-1;
+		}
+	}
+
+	if (foldernum == 0 || foldernum == 1 || foldernum == 2 || foldernum == 3 || foldernum == 6 || foldernum == 7 || foldernum == 8 || foldernum == 9 || foldernum == 10){
+		var cnt=0;
+		for (var i in trial.objectlist){
+			for (var j=0; j<=perobj-1; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
+	//only 90 images in hvm10 test set
+	if (foldernum == 11){
+		var cnt=0;
+		for (var i in trial.objectlist){
+			for (var j=0; j<=perobj-1-10; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
+	if (foldernum == 4){
+		var cnt=0;
+		for (var i in trial.objectlist){
+			for (var j=0; j<=perobj-1; j++){
+				potentialImages.serial[cnt]=trial.objectlist[i]*perobj+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			} //for j exemplars
+		} //for i objects
+	}
+
+	if (foldernum == 5){
+		var cnt=0;
+		for (var i in trial.objectlist){
+			for (var j=0; j<=perobjvec[trial.objectlist[i]]-1; j++){
+				potentialImages.serial[cnt]=objstart[trial.objectlist[i]]+j;
+				potentialImages.obj[cnt]=trial.objectlist[i];
+				cnt=cnt+1;
+			}
+		}
+	}
+
+	// Get images
+	var cnt=0;
+	for (var q=0; q<=potentialImages.serial.length-1; q++){
+		images.serial[cnt]=potentialImages.serial[q];
+		images.packserial[cnt]=images.packsz*Math.floor(potentialImages.serial[q]/images.packsz);
+		images.packpos[cnt] = potentialImages.serial[q] - images.packserial[cnt];
+		images.obj[cnt]=potentialImages.obj[q];
+		cnt=cnt+1;
+	}
+
+	// Get packs, assign images to packs
+	var isnewpack=1;
+	var packcnt = 0;
+	for (var q=0; q<=images.serial.length-1; q++){
+		isnewpack = 1;
+		for (var q2=0; q2<=imagesPack.packserial.length-1; q2++){
+			if (images.packserial[q] == imagesPack.packserial[q2]){
+				isnewpack=0;
+			}
+		}
+
+		if (isnewpack==1){
+			imagesPack.packserial[packcnt] = images.packserial[q];			
+			for (var q2=0; q2<=images.serial.length-1; q2++){
+				if (images.packserial[q2] == images.packserial[q]){
+					images.packpointer[q2] = packcnt;
+				}
+			}
+			packcnt = packcnt+1;
+		}
+	}
+
+	return {
+			images: images,
+			imagesPack: imagesPack
+		};
+}
+
+function setReward(){
+	var m = 0;
+	var b = 0;
+	if (env.pump == 1){
+		// m = 1.13; b = 15.04;
+		m = 0.99; b = 14.78;
+	} //peristaltic (adafruit)
+	else if (env.pump == 2){
+		// m = 3.20; b = -15.47;
+		m = 1.40; b = -58.77;
+	} //submersible (tcs)
+	else if (env.pump == 3){
+		// m = 0.80; b = -3.00;
+		m=0.91; b = -15;
+	} //diaphragm (tcs)
+	else if (env.pump == 4){
+		m = 0.0531; b=-1.2594;
+	} //piezoelectric (takasago)
+	else if (env.pump == 5){
+		m = 2.4463; b=53.6418;
+	} //new diaphragm (tcs)
+	else if (env.pump == 6){
+		if (env.liquid==1 || env.liquid==3){
+			m=0.1251; b=-0.0833; //1=water 2=water-condensed milk 3=marshmallow slurry (4/30mL)
+		}
+		else if (env.liquid==2){
+			m=0.0550; b=0.6951; //water-condensed milk (50/50)
+		}
+	} //piezoelectric 7mL/min (takasago)
+	trial.reward = (trial.rewardper1000 - b)/m/1000;
+}
+
+	
+// HELPER FUNCTIONS (end)
+
+</script>
+</head>
+
+<!-- ************* BODY *************** -->
+<body bgcolor=#7F7F7F>
+
+<div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
+	<p id="headsuptext" style="z-index:99; position: absolute; left: 1px; top: 1px; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;"></p>
+	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:98; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvas0" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvas1" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvas2" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvas3" width="0" height="0" src="" style="z-index:3; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvas4" width="0" height="0" src="" style="z-index:4; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvas5" width="0" height="0" src="" style="z-index:5; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvas6" width="0" height="0" src="" style="z-index:6; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvas7" width="0" height="0" src="" style="z-index:7; position: absolute; left: 0px; top: 0px;"> </canvas>
+
+	<video id="video" style="z-index:0; position: absolute; right: 0px; top: 0px;"></video>
+	<canvas id="canvascapture" width="0" height="0" src="" style="z-index:0; position: absolute; left: 0px; top: 0px;"> </canvas>
+</div>
+<dialog id="subjid_dialog">
+  <p>Subject ID</p>
+ 
+   <!--Pull down menu that will hold file list-->
+  <select id="subjid_list">
+  	<option value="-1">--</option>
+  </select>
+</dialog>
+
+<script>
+
+// VARIABLES begin
+// Variables (general)
+	var subjectlist = ["Test","Mieke","Scipio","Manto","Picasso","Nano","Setta","Magneto","Zico"];
+	var subjectdialog = document.getElementById("subjid_dialog");
+	var subjectlistobj = document.getElementById("subjid_list");
+	//populate list
+	for (var q=subjectlist.length-1; q>=0; q--){
+		// add menu option
+		var opt = document.createElement('option');
+		opt.value = q;
+		opt.innerHTML = subjectlist[q];
+		subjectlistobj.appendChild(opt);
+	}
+	subjectlistobj.addEventListener("change",subjectlist_listener,false);
+	var paramfile={
+		dir: "MonkeyTurk/parameterfiles/",
+		name: null,
+		data: null,
+		ver: null,
+		date: null,
+		datahasChanged: false,
+		filehasChanged: false,
+	}
+	var canvas = {
+		blank: 0,
+		sample: 1,
+		test: 2,
+		touchfix: 3,
+		eyefix: 4,
+		reward: 5,
+		photoreward: 6,
+		punish: 7,
+		front: 0,
+		sequenceblank: [0,0],
+		tsequenceblank: [0,50],
+		sequencepre: [0,3],
+		tsequencepre: [0,300],
+		sequence: [0,1,0,2], //0=gray 1=sample 2=test 3=fix 4=reward 5=punish
+		tsequence: [0,100,100+100,100+100+100], //timing between frames
+		sequencepost: [0,5,6],
+		tsequencepost: [0,25,600],
+		buffered: 0,
+
+		headsupfraction: 1/3,
+		offsetleft: 0,
+		offsettop: 0,
+	};
+	var imagesSample = {
+		folder: "MonkeyTurk/obj25/imagepacks/imp",
+		packsz: 10,
+		serial: [],
+		obj: [],
+		packpointer: [],
+		packserial: [],
+		packpos: [],
+		pixLR: [],
+		scale: 1,
+	}; //filenames will be placed in images[idx].src
+	var imagesTest = {
+		folder: "MonkeyTurk/obj25/imagepacks/imp",
+		packsz: 10,
+		serial: [],
+		obj: [],
+		packpointer: [],
+		packserial: [],
+		packpos: [],
+		pixLR: [],
+		scale: 1,
+	}; //filenames will be placed in imagesProto[idx].src
+	var imagesSamplePack
+	var imagesTestPack
+	var frame = {
+		current: 0,
+		shown: [],
+	}
+	var sounds = {
+		folder: "MonkeyTurk/sounds/au",
+		serial: [0,1,2,3,4],
+		buffer: [],
+	}
+	var boundingBoxFixation=[]; //where the fixation dot is on the canvas
+	var boundingBoxesTest; //where the test images are on the canvas
+	var waitforClick; //variable to hold generator
+	var fixationTimer; //variable to hold timer
+	var xgrid=[];
+	var ygrid=[];
+	var xgridcent=[];
+	var ygridcent=[];
+	var hgridcent=[];
+	var vgridcent=[];
+	var gridcentidx=[];
+	var curridx = null;
+	var battery = {
+		current: 0,
+		ldt: [],
+	}
+	var datafiles=[];
+	var ndatafiles2read=5;
+
+// Variables (updatable through parameter file)
+	var env = {};
+	var trial = {
+		subjid: "Test",
+		datadir: "MonkeyTurk/",
+		automator: 0, //0=no automation 1=obj25 2=MURI
+		takephoto: 0,
+	};
+	var trialhistory={
+		trainingstage: [],
+		correct: [],
+		current: 0,
+	}
+	var fixationcleared = 0
+// VARIABLES end
+
+// Screen, Video, & Audio initialization begin
+	// Prevent window scrolling and bounce back effect
+	document.body.addEventListener('touchmove',function(event){
+		event.preventDefault();
+	}, false);
+
+	//Audio pulses for reward
+	var audiocontext = new (window.AudioContext || window.webkitAudioContext)();
+	var gainNode = audiocontext.createGain()
+	gainNode.connect(audiocontext.destination)
+
+	var devicePixelRatio = window.devicePixelRatio || 1;
+	var visiblecanvasobj = document.getElementById("canvas" + canvas.front);
+	var visiblecontext = visiblecanvasobj.getContext("2d");
+	var backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
+	                            visiblecontext.mozBackingStorePixelRatio ||
+	                            visiblecontext.msBackingStorePixelRatio ||
+	                            visiblecontext.oBackingStorePixelRatio ||
+	                            visiblecontext.backingStorePixelRatio || 1;
+	var canvasScale = devicePixelRatio/backingStoreRatio;
+	
+	//Start video stream
+	var videoobj = document.getElementById('video');
+	videoobj.addEventListener('mousedown',mousedown_listener,false);
+	videoobj.addEventListener('touchstart',touchstart_listener,false);
+	navigator.getMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+	navigator.getMedia({video: true, audio: false},function(stream){videoobj.src=window.URL.createObjectURL(stream)},function(err){console.log('problem starting video stream')});
+
+	//Monitor Battery - from: http://www.w3.org/TR/battery-status/
+	navigator.getBattery().then(function(batteryobj){
+		battery.ldt[battery.current]=[batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())];
+		battery.current++;
+
+		batteryobj.addEventListener('levelchange',function(){
+			battery.ldt[battery.current]=[batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())];
+			battery.current++;
+		})
+	});
+// Screen, Video, & Audio initialization end
+
+//Generator DMS task
+spawn(function* (){
+
+	// GET PARAMFILE NAME
+	subjectdialog.showModal();
+	yield subjidPromise();
+
+	yield getFileListDropbox();
+	if (datafiles.length < ndatafiles2read){
+		ndatafiles2read = datafiles.length;
+	}
+	paramfile.name = paramfile.dir + trial.subjid + "_params.txt";
+	yield readParametersfromDropbox();
+	trial.currentAutomator = trial.automator;
+	for (i=0; i <= ndatafiles2read - 1; i++){
+		yield readPerformanceHistoryfromDropbox(ndatafiles2read - i - 1);
+	}
+
+	trial.need2loadParameters = 1;
+	trial.need2loadImages = 1;
+	trial.need2writeParameters = 0;
+
+	//Load sounds
+	soundpromises = sounds.serial.map(loadSoundfromDropbox); //create array of sound load Promises
+	yield Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
+
+for (trial.current=0; trial.current<10000; trial.current++){
+
+if (trial.need2loadParameters == 1){
+	yield readParametersfromDropbox();
+	console.log(trial.objectlist)
+
+	if (trial.fixationusessample == 0){
+		canvas.sequencepre=[0,3]
+	}
+	else if (trial.fixationusessample == 1){
+		canvas.sequencepre=[0,1]
+	}
+	canvas.tsequence = [0,100,100+trial.sampleON,100+trial.sampleON+trial.sampleOFF]; //timing between frames
+	imagesSample.folder = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderSample + "/imp";
+	imagesTest.folder = "MonkeyTurk/obj25/imagepacks" + trial.imageFolderTest + "/imp";
+	imagesSample.scale = trial.sampleScale;
+	imagesTest.scale = trial.testScale;
+	setReward(); canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
+
+if (trial.fixationmove==0){
+	trial.fixationinterval = 8000;
+}
+else {
+	trial.fixationinterval=trial.fixationmove;
+}
+
+if (env.species == "macaque"){
+	canvas.headsupfraction=0;
+}
+else if (env.species == "marmoset"){
+	canvas.headsupfraction=1/3-0.06;
+}
+
+	setupCanvasHeadsUp()
+	windowWidth = window.innerWidth; // get true window dimensions at last moment
+	windowHeight = window.innerHeight;
+	if (canvas.headsupfraction > 0){
+		videoobj.style.height=canvas.offsettop + "px";
+	}
+	else if (canvas.headsupfraction == 0 && trial.takephoto == 0){
+		videoobj.remove();
+	}
+	if (trial.takephoto == 1){
+		videoobj.play();
+	}
+
+	for (i = 0; i <= canvas.punish; i++) {setupCanvas(i);}
+	if (devicePixelRatio !== 1){
+		scaleCanvasforHiDPI(canvas.sample);
+		scaleCanvasforHiDPI(canvas.test);
+	}
+
+//reset trial tracking variables
+var d = new Date;
+var datestr = d.toISOString();
+trial.filename = datestr.slice(0,datestr.indexOf(".")) + "_" + trial.subjid + ".txt";
+trial.current=0;
+trial.fixationgrid=[];
+trial.sample=[];
+trial.test=[];
+trial.sampleserial=[];
+trial.testserial=[];
+trial.tstart=[]
+trial.xytfixation=[];
+trial.xytresponse=[];
+trial.response=[];
+trial.correctItem=[];
+trial.sampleblockidx=0;
+trial.stickyresponse=0;
+trial.displayoutofbounds=0;
+
+trial.consecutivehits=0;
+trial.nreward=[];
+
+trial.need2loadParameters = 0;
+
+renderEyeFixation();
+renderReward();
+renderPhotoReward();
+renderPunish();
+renderBlank();
+}
+
+
+if (trial.need2loadImages == 1){
+	// SELECT IMAGES
+		funcreturn = getImageList(imagesSample,trial.imageFolderSample);
+		imagesSample = funcreturn.images;
+		imagesSamplePack = funcreturn.imagesPack;
+
+		funcreturn = getImageList(imagesTest,trial.imageFolderTest);
+		imagesTest = funcreturn.images;
+		imagesTestPack = funcreturn.imagesPack;
+	// SELECT IMAGES (end)
+
+	// LOAD IMAGES
+		imageSamplepromises = imagesSamplePack.packserial.map(loadSampleImagefromDropbox); //create array of image load Promises
+		yield Promise.all(imageSamplepromises); //simultaneously evaluate array of image load promises
+		imageTestpromises = imagesTestPack.packserial.map(loadTestImagefromDropbox); //create array of image load Promises
+		yield Promise.all(imageTestpromises); //simultaneously evaluate array of image load promises
+
+		// pixel locations of image within pack
+		// imagesSample.wd = imagesSamplePack[0].width/imagesSample.packsz;
+		imagesSample.wd = 256;
+		imagesSample.ht = imagesSamplePack[0].height;
+		// imagesTest.wd = imagesTestPack[0].width/imagesTest.packsz;
+		imagesTest.wd = 256;
+		imagesTest.ht = imagesTestPack[0].height;
+		for (i = 0; i<= imagesSample.serial.length-1; i++){
+			imagesSample.pixLR[i] = [imagesSample.packpos[i] * imagesSample.wd, (imagesSample.packpos[i]+1) * imagesSample.wd - 1];
+		}
+		for (i = 0; i<= imagesTest.serial.length-1; i++){
+			imagesTest.pixLR[i] = [imagesTest.packpos[i] * imagesTest.wd, (imagesTest.packpos[i]+1) * imagesTest.wd - 1];
+		}
+	// LOAD IMAGES (end)
+
+	// MAKE THE IMAGE DISPLAY GRID (3x3)
+	var cnt=0;
+	var fixationgridsize = 5
+	for (var i=1; i<=fixationgridsize; i++){
+		for (var j=1; j<=fixationgridsize; j++){
+			xgrid[cnt]=i - 1/2;
+			ygrid[cnt]=j - 1/2;
+			cnt++;
+		}
+	}
+	gridcentidx=Math.ceil(fixationgridsize*fixationgridsize/2)-1
+
+	//center x & y grid within canvas
+	var dx = (document.body.clientWidth - canvas.offsetleft)*devicePixelRatio/2/canvasScale - (fixationgridsize/2)*imagesSample.wd*imagesSample.scale/canvasScale;
+	var dy = (document.body.clientHeight - canvas.offsettop)*devicePixelRatio/2/canvasScale - (fixationgridsize/2)*imagesSample.ht*imagesSample.scale/canvasScale;
+	hgridcent = (document.body.clientWidth - canvas.offsetleft)*devicePixelRatio/2/canvasScale
+	vgridcent = (document.body.clientHeight - canvas.offsettop)*devicePixelRatio/2/canvasScale
+	for (var i=0; i<=xgrid.length-1; i++){
+		xgridcent[i]=xgrid[i]*imagesSample.wd*imagesSample.scale/canvasScale + dx;
+		ygridcent[i]=ygrid[i]*imagesSample.ht*imagesSample.scale/canvasScale + dy;
+	}
+	// MAKE THE IMAGE DISPLAY GRID (end)
+// renderBlank();
+renderEyeFixation();
+renderReward();
+renderPhotoReward();
+renderPunish();
+renderBlank();
+	trial.need2loadImages = 0;
+}
+
+			// CHOOSE SAMPLE
+			if (trial.sampleblockidx == 0){
+				trial.sample[trial.current] = Math.floor((imagesSample.serial.length)*Math.random());
+			} //randomly choose sample
+			else if (trial.sampleblockidx <= trial.sampleblocksize-1){
+				trial.sample[trial.current] = trial.sample[trial.current-1];
+			} //keep same sample
+			trial.sampleblockidx++;
+
+			// choose one object
+			// trial.sample[trial.current] = imagesSample.serial.length-1
+			// trial.sample[trial.current] = 0 //wrench
+			// trial.sample[trial.current] = 1 //rhino
+			// trial.sample[trial.current] = 3 //camel
+			trial.sample[trial.current] = 16 //head
+
+			//Correction procedure
+			if (trial.current > 0 && trial.response[trial.current-1] != trial.correctItem[trial.current-1]){
+				trial.sample[trial.current]=trial.sample[trial.current-1]
+				trial.test[trial.current]=trial.test[trial.current-1]
+				trial.correctItem[trial.current]=trial.correctItem[trial.current-1]
+				trial.sampleblockidx--
+			}
+			else {
+				//CHOOSE TEST
+				funcreturn=getTest(trial.nway);
+				if (trial.stickyresponse >= trial.nstickyresponse){
+					while (funcreturn.correctItem == trial.response[trial.current-1]){
+						funcreturn=getTest(trial.nway);
+					} //redraw so that correct item is on opposite side of sticky response
+				}
+				trial.test[trial.current]=funcreturn.testArray;
+				trial.correctItem[trial.current]=funcreturn.correctItem;
+			}
+
+			if (trial.sampleblockidx > trial.sampleblocksize-1){
+				trial.sampleblockidx = 0;
+			} //reset
+
+			//GET IMAGE SERIALS
+			trial.sampleserial[trial.current]=imagesSample.serial[trial.sample[trial.current]];
+			var testserial=[];
+			for (var q in trial.test[trial.current]){
+				testserial[q]=imagesTest.serial[trial.test[trial.current][q]];
+			}
+			trial.testserial[trial.current]=testserial;
+
+	// CHOOSE FIXATION, SAMPLE, TEST (end)
+
+canvas.buffered=0;
+if (trial.fixationdur == -1){
+	bufferTrialImages()
+
+	trial.waitingforFixation=0
+	trial.fixationgrid[trial.current]=-1;
+	trial.tstart[trial.current]=Math.round(performance.now());
+	trial.xytfixation[trial.current]=[-1,-1,trial.tstart[trial.current]];
+}
+else if (trial.fixationdur < -1){
+	trial.waitingforFixation = -trial.fixationdur
+}
+else if (trial.fixationdur > 0){
+	trial.waitingforFixation=1;
+}
+while (trial.waitingforFixation > 0){
+	fixationcleared=0
+
+	// CHOOSE FIXATION, SAMPLE, TEST
+	//CHOOSE FIXATION
+	if (trial.fixationmove > 0){//Choose grid point
+		trial.fixationgrid[trial.current]=Math.floor((xgrid.length)*Math.random())
+	}
+	else if (trial.fixationmove == 0){
+		trial.fixationgrid[trial.current]=trial.fixationgridindex;
+	}
+
+	//FIXATION
+	trial.stage=0;
+	if (trial.takephoto==1){
+	// takephoto(trial.current,trial.stage); //before fixation
+	}
+	
+	//buffer fixation, sample & test
+	renderTouchFixation();
+
+	if (canvas.buffered == 0){
+		bufferTrialImages();
+	}
+
+	if (trial.fixationusessample == 1 && trial.waitinforFixation){
+		while (canvas.buffered == 0){
+			//wait since need sample to display as fixation
+		}
+	}
+
+	//fixation
+	trial.tstart[trial.current]=Math.round(performance.now());
+	frame.shown=[];
+	for (var q in canvas.sequencepre){frame.shown[q]=0}; frame.current=0;
+	if (env.species == 'marmoset'){
+		playSound(0);
+	}
+	var t0=performance.now()
+	yield displayTrial(canvas.sequencepre,canvas.tsequencepre);
+	var t1=performance.now()
+	console.log('TIME TO SHOW FIXATION IMAGE = ' + (t1-t0) + ' ms')
+audiocontext.suspend()
+fixationcleared=1
+	yield fixationPromise();
+console.log('fixationpromise resolved, READY TO LEAVE WHILE LOOP' + trial.waitingforFixation)
+	for (var q in canvas.sequenceblank){frame.shown[q]=0}; frame.current=0;
+	if (trial.waitingforFixation>0){
+		yield displayTrial(canvas.sequenceblank,canvas.tsequenceblank);
+	}
+} //while waiting for fixation
+console.log('EXITED WHILE LOOP')
+
+trial.stage=1;
+		// sample & test
+		if (trial.rewardStage === 1){
+			frame.shown=[];
+			while (canvas.buffered == 0){
+				//wait
+			}
+			for (var q in canvas.sequence){frame.shown[q]=0}; frame.current=0;
+			yield displayTrial(canvas.sequence,canvas.tsequence);
+audiocontext.suspend()
+			yield responsePromise();
+			trial.waitingforResponse=0;
+		}
+
+if (trial.takephoto==1){
+takephoto(trial.current,trial.stage); //after fixation
+}
+
+trial.stage=2;
+		// Determine reward || punish
+		frame.shown=[];
+		for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
+		if (trial.rewardStage === 0){
+			if (trial.brokeFixation == 0){
+				trial.response[trial.current] = trial.correctItem[trial.current];
+				canvas.sequencepost[1]=canvas.photoreward;
+				canvas.sequencepost[2]=canvas.reward;
+				canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
+				console.log('touched fixation - reward')
+			}
+			else if (trial.brokeFixation == 1){
+				trial.response[trial.current] = -1;
+				canvas.sequencepost[1]=canvas.punish;
+				canvas.sequencepost[2]=canvas.punish;
+				canvas.tsequencepost[2] = trial.punish;
+				console.log('Touched outside fixation - punish')
+			}
+		} //reward fixation
+		else if (trial.rewardStage === 1){
+			if (trial.response[trial.current] == trial.correctItem[trial.current]){
+				canvas.sequencepost[1]=canvas.photoreward;
+				canvas.sequencepost[2]=canvas.reward;
+				canvas.tsequencepost[2] = canvas.tsequencepost[1]+trial.reward*1000;
+
+// var dt = 17;
+// canvas.tsequencepost=[100,100+1*dt,100+2*dt,100+3*dt,100+4*dt,100+5*dt,100+6*dt,100+7*dt,100+8*dt,100+9*dt,100+10*dt,100+11*dt,100+12*dt,100+13*dt,100+14*dt,100+15*dt,100+16*dt,100+17*dt,100+18*dt,100+19*dt,100+20*dt];
+// canvas.sequencepost=[0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0,4,0];
+
+				console.log('correct')
+
+
+			} //reward
+			else {
+				canvas.sequencepost[1]=canvas.punish;
+				canvas.sequencepost[2]=canvas.punish;
+				canvas.tsequencepost[2] = trial.punish;
+				console.log('WRONG!')
+			}//punish
+
+			if (trial.current>0){
+				if (trial.response[trial.current]==trial.response[trial.current-1]){
+					trial.stickyresponse++;
+				}
+				else {
+					trial.stickyresponse=0;
+				}
+			}//stuck responding to same side
+		} //reward DMS
+
+	//Calculate number of rewards to give
+	if (trial.response[trial.current] == trial.correctItem[trial.current] && 
+		(trial.current==0 || 
+		(trial.rewardStage==0 && 
+			trial.xytfixation[trial.current][2] - trial.xytfixation[trial.current-1][2] < trial.consecutivehitsITI) || 
+		(trial.rewardStage==1 && 
+			trial.xytresponse[trial.current][2] - trial.xytresponse[trial.current-1][2] < trial.consecutivehitsITI))){
+			
+			trial.consecutivehits++
+
+			trial.nreward[trial.current] = 1 + Math.floor(trial.consecutivehits / trial.nconsecutivehitsforbonus)
+
+		if (trial.nreward[trial.current] > trial.nrewardmax){
+			trial.nreward[trial.current] = trial.nrewardmax
+		}
+	}
+	else {
+		if (trial.response[trial.current] == trial.correctItem[trial.current]){
+			trial.consecutivehits=1;
+			trial.nreward[trial.current] = 1;
+		}
+		else if (trial.response[trial.current] != trial.correctItem[trial.current]){
+			trial.consecutivehits=0;
+			trial.nreward[trial.current] = 0;
+		}	
+	}
+
+	console.log('nhits ' + trial.consecutivehits + '  nreward ' + trial.nreward[trial.current])
+
+// if (trial.takephoto==1){
+// 	takephoto(trial.current,trial.stage); //before reward delivery
+// }
+
+		// Deliver reward or punish
+		frame.shown=[];
+		for (var q in canvas.sequencepost){frame.shown[q]=0}; frame.current=0;
+			// trial.nreward[trial.current]=100
+		if (canvas.sequencepost[1]==canvas.photoreward && env.species == 'marmoset'){
+			for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
+				frame.shown=[];
+				for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
+				playSound(2);
+				yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
+			}
+		} // play reward sound
+		if (canvas.sequencepost[1]==canvas.photoreward && env.species == 'macaque'){
+			for (var q = 0; q <= trial.nreward[trial.current]-1; q++){
+				frame.shown=[];
+				for (var q2 in canvas.sequencepost){frame.shown[q2]=0}; frame.current=0;
+				yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
+				yield dispenseReward();
+			}
+		} // play pump sound
+		if (canvas.sequencepost[1]==canvas.punish){
+			if (env.species == 'marmoset'){
+				playSound(3);
+			}
+			yield displayTrial(canvas.sequencepost,canvas.tsequencepost);
+			yield dispensePunish();
+		}
+
+trial.stage=3;
+if (trial.takephoto==1){
+	takephoto(trial.current,trial.stage); //after reward or punish
+}
+
+		//update the running trial history
+		if (trial.current == 0){
+
+			if (trial.automator == 0){
+			}
+			else if (trial.automator == 1){
+				funcreturn = updateTask1("readtaskstageonly");
+				trialhistory.trainingstage[trialhistory.current] = funcreturn;
+				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
+			}
+			else if (trial.automator == 2){
+				funcreturn = updateTask2("readtaskstageonly");
+				trialhistory.trainingstage[trialhistory.current] = funcreturn;
+				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
+			}
+			else if (trial.automator == 3){
+				funcreturn = updateTask3("readtaskstageonly");
+				trialhistory.trainingstage[trialhistory.current] = funcreturn;
+				trial["currentstage"]=trialhistory.trainingstage[trialhistory.current];
+			}
+		}
+		if (trial.rewardStage==0 & trial.brokeFixation==0){
+			trialhistory.correct[trialhistory.current]=1;
+		}
+		else if (trial.rewardStage==0 & trial.brokeFixation==1){
+			trialhistory.correct[trialhistory.current]=0;
+		}
+
+		if (trial.rewardStage==1 & trial.response[trial.current] == trial.correctItem[trial.current]){
+				trialhistory.correct[trialhistory.current]=1;
+		}
+		else if (trial.rewardStage==1) {
+			trialhistory.correct[trialhistory.current]=0;
+		}
+		trialhistory.current++;
+
+		console.log('ready to write data')
+
+		//save data
+		writeDatatoDropbox(); //async - no need to wait for data to write
+		updateHeadsUpDisplay(); // async
+
+		console.log('end of generator iteration' + trial.current);
+
+
+// Check if automator needs to update task
+	if (trial.automator==0){
+	}
+	else if (trial.automator==1){
+		updateTask1("writeifneeded");
+	}
+	else if (trial.automator==2){
+		updateTask2("writeifneeded");
+	}
+	else if (trial.automator==3){
+		updateTask3("writeifneeded");
+	}
+
+	if (trial.need2writeParameters == 1){
+		console.log("updating task parameters (new stage or reward)");
+		yield writeParameterstoDropbox();
+		trial.need2writeParameters = 0;
+	}
+
+// Asynchronously check if parameter file was changed by experimenter
+checkParameterFileStatus()
+
+	}
+	console.log('end of generator for loop');
+}) //spawn
+
+</script>
+</body>
+
+<!-- ************ COMMENT SECTION ************ -->
+<!-- This code uses generators & promises from ESM6 harmony to implement a state machine.  This is experimental and only supported on modern browsers (see http://caniuse.com/#feat=promises for full support).
+
+The reasons for using this approach are twofold:
+
+(1) Solving the inversion of control with the old way of using async callbacks in javascript (http://blog.getify.com/promises-part-2/)
+(2) readability of the code (http://davidwalsh.name/async-generators)
+
+->(1) makes exception handling much easier
+->(2) makes the code easier to edit in the future:
+		"The main strength of generators is that they provide a single-threaded, synchronous-looking code style, while allowing you to hide the asynchronicity away as an implementation detail. This lets us express in a very natural way what the flow of our program's steps/statements is without simultaneously having to navigate asynchronous syntax and gotchas."
+
+As of 2014.12.01, generators are not supported in safari and not in iOS (even Chrome for iOS is limited to apple webkit).  Could transpile but better to use a native Chrome environment (i.e. android tablet).
+
+
+// Load audio webkit, see http://middleearmedia.com/controlling-web-audio-api-oscillators/
+// var audiocontext = new webkitAudioContext(); // Create audio container with webkit prefix
+
+// In case you're wondering why you can't use the devicePixelRatio to determine the backing store size, the answer is that they aren't guaranteed to match. Despite presenting the same devicePixelRatio value, Chrome and Safari 6 can and do have entirely different approaches for the backing store size (and therefore the webkitBackingStorePixelRatio) on HiDPI devices. The net result is that we can't rely on devicePixelRatio to know how the browser is going to scale images that are written into the canvas.  http://www.html5rocks.com/en/tutorials/canvas/hidpi/
+
+// https://blog.domenic.me/youre-missing-the-point-of-promises/
+
+-->
+<!-- ************ /COMMENT SECTION ************ -->
+
+</html>

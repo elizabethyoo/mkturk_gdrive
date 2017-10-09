@@ -1,0 +1,547 @@
+<!doctype html>
+
+<head>
+<meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
+<meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense. Also, removes 300-350ms tap delay (https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away) -->
+
+<link rel="manifest" href="mkturkmanifest.json">
+<link rel="icon" href="mkturklogo48.png">
+
+<script src="mkturk_installsettings.js"></script>
+<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+
+</head>
+
+<!-- ************* BODY *************** -->
+<body bgcolor=#7F7F7F>
+<div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
+	<button name="connectble" style="visibility:hidden; position: absolute; top: 45%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
+
+	<button name="noble" style="visibility:hidden; position: absolute; top: 55%; left: 45%; height: 50px; width: 200px; border-radius: 20px">No Bluetooth juicer</button>
+
+	<p id="headsuptext" style="z-index:101; position: absolute; left: 1px; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; word-break: break-all;"></p>
+
+	<p id="headsuptextautomator" style="z-index:99; position: absolute; left: 50%; top: 1px; height: 40%; width: 50%; font-size: 20px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
+
+	<p id="imageloadingtext" style="z-index:100; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
+
+	<button name="doneEditingParams" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 75px; width: 100px; border-radius: 20px">Done editing params</button>
+
+	<button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
+
+	<canvas id="canvasheadsup" width="0" height="0" src="" style="z-index:98; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvasblank" width="0" height="0" src="" style="z-index:99; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvassample" width="0" height="0" src="" style="z-index:1; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvastest" width="0" height="0" src="" style="z-index:2; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvastouchfix" width="0" height="0" src="" style="z-index:3; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvaseyefix" width="0" height="0" src="" style="z-index:4; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvasreward" width="0" height="0" src="" style="z-index:5; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvasphotoreward" width="0" height="0" src="" style="z-index:6; position: absolute; left: 0px; top: 0px;"> </canvas>
+	<canvas id="canvaspunish" width="0" height="0" src="" style="z-index:7; position: absolute; left: 0px; top: 0px;"> </canvas>
+</div>
+<dialog id="subjectID_dialog">
+  <p>Select subject: </p>
+   <!--Pull down menu that will hold file list-->
+  <select id="subjectID_list">
+  	<option value="-1">--</option>
+  </select>
+</dialog>
+
+<script src="mkturk_globalvariables.js"></script>
+<script src="mkturk_eventlisteners.js" type="text/javascript"></script>
+<script src="mkturk_dropbox.js" type="text/javascript"></script>
+<script src="mkturk_imagebuffer.js" type="text/javascript"></script>
+<script src="mkturk_trialqueue.js" type="text/javascript"></script>
+<script src="mkturk_screenfunctions.js"></script>
+<script src="mkturk_automator.js" type="text/javascript"></script>
+<script src="mkturk_bluetooth.js" type="text/javascript"></script>
+<script src="mkturk_utils.js" type="text/javascript"></script>
+
+<script>
+
+//================== AUTHENTICATE ==================//
+var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
+if (isAuthenticated()){
+	//Create an instance of Dropbox with the access token
+	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
+}
+else {
+	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
+	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
+}
+//=============== (end) AUTHENTICATE ===============//
+
+
+// GET PARAMFILE NAME
+var subjectdialog = document.getElementById("subjectID_dialog");
+var subjectlistobj = document.getElementById("subjectID_list");
+for (var i=subjectlist.length-1; i>=0; i--){
+	var opt = document.createElement('option');
+	opt.value = i;
+	opt.innerHTML = subjectlist[i];
+	subjectlistobj.appendChild(opt);
+}
+subjectlistobj.addEventListener("change",subjectlist_listener,false);
+
+// Button callbacks
+document.querySelector("button[name=connectble]").addEventListener(
+	'touchend',findBLEDevice,false)
+document.querySelector("button[name=connectble]").addEventListener(
+	'mouseup',findBLEDevice,false)
+document.querySelector("button[name=noble]").addEventListener(
+	'touchend',skipBLEDevice,false)
+document.querySelector("button[name=noble]").addEventListener(
+	'mouseup',skipBLEDevice,false)
+document.querySelector("button[name=doneEditingParams]").addEventListener(
+	'touchend',doneEditingParams_listener,false)
+document.querySelector("button[name=doneEditingParams]").addEventListener(
+	'mouseup',doneEditingParams_listener,false)
+document.querySelector("button[name=doneTestingTask]").addEventListener(
+	'touchend',doneTestingTask_listener,false)
+document.querySelector("button[name=doneTestingTask]").addEventListener(
+	'mouseup',doneTestingTask_listener,false)
+var textobj = document.getElementById("headsuptext")
+textobj.addEventListener('touchend',headsuptext_listener,false)
+textobj.addEventListener('mouseup',headsuptext_listener,false)
+
+//============= Initialize Audio & Battery Objects ==================//
+	// Prevent window scrolling and bounce back effect
+	document.body.addEventListener('touchmove',function(event){
+		event.preventDefault();
+	}, {capture: false, passive:false});
+	//Audio pulses for reward
+	var audiocontext = new (window.AudioContext || window.webkitAudioContext)();
+	var gainNode = audiocontext.createGain()
+	gainNode.connect(audiocontext.destination)
+	ENV.DevicePixelRatio = window.devicePixelRatio || 1;
+	var visiblecanvasobj = CANVAS.obj[CANVAS.front];
+	var visiblecontext = visiblecanvasobj.getContext("2d");
+	var backingStoreRatio = visiblecontext.webkitBackingStorePixelRatio ||
+	                            visiblecontext.mozBackingStorePixelRatio ||
+	                            visiblecontext.msBackingStorePixelRatio ||
+	                            visiblecontext.oBackingStorePixelRatio ||
+	                            visiblecontext.backingStorePixelRatio || 1;
+	ENV.CanvasRatio = backingStoreRatio/ENV.DevicePixelRatio
+	
+	//Monitor Battery - from: http://www.w3.org/TR/battery-status/
+	navigator.getBattery().then(function(batteryobj){
+		ENV.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+		batteryobj.addEventListener('levelchange',function(){
+			ENV.BatteryLDT.push([batteryobj.level, batteryobj.dischargingTime, Math.round(performance.now())]);
+		})
+	});
+//============= (end) Initialize Audio & Battery Objects ==================//
+
+(async function(){
+	//================== AWAIT CONNECT TO BLE ==================//
+	document.querySelector("button[name=connectble]").style.display = "block"
+	document.querySelector("button[name=connectble]").style.visibility = "visible"
+	document.querySelector("button[name=noble]").style.display = "block"
+	document.querySelector("button[name=noble]").style.visibility = "visible"
+
+	await connectBLEButtonPromise()
+
+	document.querySelector("button[name=connectble]").style.display = "none" //if do style.visibility=hidden, element will still occupy space
+	document.querySelector("button[name=noble]").style.display = "none"
+	
+	//================== AWAIT LOAD SUBJECT PARAMS ==================//
+	subjectdialog.showModal()
+	await subjectIDPromise()
+	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
+	await loadParametersfromDropbox(ENV.ParamFileName)
+
+	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
+	ble.statustext = await loadTextFilefromDropbox(ENV.ParamFileName)
+	updateStatusText(ble.statustext)
+	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
+	document.querySelector("button[name=doneEditingParams]").style.display = "block"
+	document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
+	
+	await editParamsPromise()
+	document.querySelector("button[name=doneEditingParams]").style.display = "none"
+	var textobj = document.getElementById("headsuptext")
+	textobj.removeEventListener('touchend',headsuptext_listener)
+	textobj.removeEventListener('mouseup',headsuptext_listener)
+	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
+
+	if (FLAGS.need2saveParameters == 1){
+		var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
+		await saveParameterTexttoDropbox(user_param_text) //write new params
+		await loadParametersfromDropbox(ENV.ParamFileName) //then read them
+	}
+	ble.statustext=""
+
+	//============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
+	// Read performance history
+	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/'
+	if (TASK.Automator != 0){
+		var history_file_paths = await getMostRecentBehavioralFilePathsFromDropbox(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
+		trialhistory = await readTrialHistoryFromDropbox(history_file_paths);		
+	}
+
+	//===================== AWAIT INITIALIZE AUTOMATOR =================//
+	// Initialize automator - change TASK to that specified by TASK.CurrentAutomatorStage. 
+	if (TASK.Automator != 0){
+		automator_data = await parseAutomatorFilefromDropbox(TASK.AutomatorFilePath) 
+		automateTask(automator_data, trialhistory) 
+		await saveParameterstoDropbox() 
+		await loadParametersfromDropbox(ENV.ParamFileName);
+
+		//========= AWAIT PRELOAD IMAGES FOR AUTOMATOR STAGES =======//
+		// Preload stuff now (to ensure smooth transitions between automator stages)
+		var AutomatorPreBuffer = {}; 
+		AutomatorPreBuffer['TrialQueue'] = {}; 
+		
+		console.log('Starting to populate automator prebuffer:')
+
+		for (var a = TASK.CurrentAutomatorStage; a < automator_data.length; a++){
+			console.time('Stage '+a)
+
+			// Make TrialQueue
+			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
+			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(samplingStrategy, automator_data[a].ImageBagsSample, automator_data[a].ImageBagsTest); 
+
+			// Populate the stage's imagebuffer with some images
+			var num_prebuffer_trials = 5
+			await AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
+			console.timeEnd('Stage '+a)
+		}
+		console.log('Done prebuffering')
+	} //if automator
+
+	//============= AWAIT LOAD SOUNDS =============//
+	soundpromises = sounds.serial.map(loadSoundfromDropbox2); //create array of sound load Promises
+	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
+	updateStatusText("")
+
+	//========= Start in TEST mode =======//
+	document.querySelector("button[name=doneTestingTask]").style.display = "block"
+	document.querySelector("button[name=doneTestingTask]").style.visibility = "visible"
+	FLAGS.savedata = 0 // test trials can be performed, but data won't be saved
+
+	FLAGS.need2loadParameters = 1
+	CURRTRIAL.num = 0
+	FLAGS.need2loadImages = 1
+
+// =========================================================================================================== // 
+// ============ MAIN LOOP ==================================================================================== // 
+// =========================================================================================================== // 
+while(true){
+
+	//============= AWAIT LOAD PARAMS =============//
+	if (FLAGS.need2loadParameters == 1){
+		var old_ImageBagsSample = TASK.ImageBagsSample
+		var old_ImageBagsTest = TASK.ImageBagsTest
+		FLAGS.need2loadParameters = await loadParametersfromDropbox(ENV.ParamFileName);
+
+		//============= SET UP CANVAS =============//
+		// Update canvas based on latest TASK state: 
+		refreshCanvasSettings(TASK); 
+		setupCanvasHeadsUp()
+		setupImageLoadingText()
+		windowWidth = document.body.clientWidth; //get true window dimensions at last possible moment
+		windowHeight = document.body.clientHeight;	
+		for (var i = 0; i <= CANVAS.names.length-1; i++) {
+			setupCanvas(CANVAS.obj[CANVAS.names[i]]);
+		}
+		if (ENV.DevicePixelRatio !== 1){
+			scaleCanvasforHiDPI(CANVAS.obj.sample);
+			scaleCanvasforHiDPI(CANVAS.obj.test);
+		}
+
+		CANVAS.workspace = [
+			0,
+			0,
+			CANVAS.obj["touchfix"].width,
+			CANVAS.obj["touchfix"].height
+		]
+
+		// Check if images were changed
+		if(!old_ImageBagsTest.equals(TASK.ImageBagsTest) || !old_ImageBagsSample.equals(TASK.ImageBagsSample)){
+			FLAGS.need2loadImages = 1; 
+		}
+		FLAGS.purge = 1
+	} //if need2loadParameters
+
+	if (FLAGS.purge == 1){
+		purgeTrackingVariables()
+		FLAGS.purge = 0; 
+	} //if purge
+
+
+	//============ CREATE IMAGE BAG & DISPLAY GRID ============//
+	if (FLAGS.need2loadImages == 1){
+		console.time('Image loading time:')
+
+		if(TASK.Automator != 1){
+			// Make TrialQueue
+			// Loads filenames manually from Dropbox
+			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
+			TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest)
+			await TQ.build(1)
+		}	
+		else if(TASK.Automator == 1){
+			TQ = AutomatorPreBuffer.TrialQueue[TASK.AutomatorStage]
+		} //if automator
+		samplebag_paths = TQ.samplebag_paths
+		samplebag_labels = TQ.samplebag_labels
+		testbag_paths = TQ.testbag_paths
+		testbag_labels = TQ.testbag_labels
+
+		// Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
+		await TQ.generate_trials(1)
+		var representative_image = await TQ.IB.get_by_name(TQ.sampleq.filename[0])
+		// var representative_image = await imagebag.get_by_name(samplebag_paths[0])
+		ENV.ImageWidthPixels = representative_image.width
+		ENV.ImageHeightPixels = representative_image.height
+		
+		ENV.Ordered_Samplebag_Filenames = samplebag_paths; 
+		ENV.Ordered_Testbag_Filenames = testbag_paths; 
+		FLAGS.need2loadImages = 0;
+		console.timeEnd('Image loading time:')
+	} //if need2loadImages
+
+	// define image display grid
+	ENV.FixationRadius=(ENV.ImageWidthPixels/2)*TASK.FixationScale*ENV.CanvasRatio
+	funcreturn = defineImageGrid(TASK.NGridPoints, ENV.ImageWidthPixels, ENV.ImageHeightPixels, TASK.GridScale);
+	xcanvascenter = funcreturn[0]
+	ycanvascenter = funcreturn[1]
+	ENV.XGridCenter = funcreturn[2]
+	ENV.YGridCenter = funcreturn[3]
+	//============ (end) CREATE IMAGE BAG & DISPLAY GRID ============//
+
+	renderReward(CANVAS.obj.reward);
+	renderPunish(CANVAS.obj.punish);
+	if(FLAGS.savedata == 0){
+		// In test mode show grid on screen
+		renderBlankWithGridMarkers(ENV.XGridCenter,ENV.YGridCenter, 
+			TASK.StaticFixationGridIndex,TASK.SampleGridIndex,TASK.TestGridIndex, 
+			TASK.FixationScale, TASK.SampleScale, TASK.TestScale, 
+			ENV.ImageWidthPixels, ENV.CanvasRatio,CANVAS.obj.blank); 
+	}
+	else if (FLAGS.savedata == 1){
+		renderBlank(CANVAS.obj.blank);
+	}
+
+	//============ SELECT SAMPLE & TEST IMAGES ============//
+	// Draw one (1) sample image from samplebag
+	console.time('trial images loadtime:')
+	var c
+	[CURRTRIAL.sampleimage, CURRTRIAL.sampleindex, CURRTRIAL.testimages, CURRTRIAL.testindices, CURRTRIAL.correctitem] = await TQ.get_next_trial();
+	console.timeEnd('trial images loadtime:')
+
+	//============ AWAIT BUFFER CANVASES WITH SAMPLE & TEST IMAGES ============//
+	await bufferTrialImages(CURRTRIAL.sampleimage, TASK.SampleGridIndex, CURRTRIAL.testimages, TASK.TestGridIndex, CURRTRIAL.correctitem);
+
+	//============ WHILE RUN FIXATION SCREEN ============//
+	FLAGS.waitingforTouches = TASK.NFixations
+	if (TASK.RewardStage == 0){
+		FLAGS.punishOutsideTouch = 1		
+	}
+	CURRTRIAL.allfixationxyt = []
+	while (FLAGS.waitingforTouches > 0){
+		// Choose fixation grid index at random
+		if (TASK.FixationMove > 0){
+			CURRTRIAL.fixationgridindex = Math.floor((ENV.XGridCenter.length)*Math.random()); 
+		}
+		else if (TASK.FixationMove <= 0){
+			CURRTRIAL.fixationgridindex = TASK.StaticFixationGridIndex;
+		}
+
+		// Render fixation screen 
+		if (TASK.FixationUsesSample == 1){
+			renderFixationUsingImage(CURRTRIAL.sampleimage, CURRTRIAL.fixationgridindex, TASK.SampleScale, CANVAS.obj.touchfix)
+		}
+		else if(TASK.FixationUsesSample != 1){
+			if (TASK.Species == "macaque" || TASK.Species == "human"){
+				var color = "white";
+			}
+			else if (TASK.Species == "marmoset"){
+				var color = "blue";
+			}
+			renderFixationUsingDot(color, CURRTRIAL.fixationgridindex, ENV.FixationRadius, CANVAS.obj.touchfix);
+		}
+		
+		// Start timer for this fixation render trial. 
+		CURRTRIAL.starttime=Math.round(performance.now());
+		frame.shown=[];
+		for (var q in CANVAS.sequencepre){
+			frame.shown[q]=0
+		}; 
+		frame.current=0;
+
+		//========= AWAIT SHOW FIXATION =========//
+		// todo: move to appropriate location
+		if (TASK.Species == 'marmoset'){
+			playSound(0)
+		}
+		await displayTrial(CANVAS.sequencepre,CANVAS.tsequencepre);
+		audiocontext.suspend()
+
+		//========= AWAIT HOLD FIXATION TOUCH =========//
+		var touchhold_return = await touchhold_promise(TASK.FixationDuration,boundingBoxesFixation,FLAGS.punishOutsideTouch)
+		CURRTRIAL.fixationtouchevent = touchhold_return.type
+		CURRTRIAL.fixationxyt = [touchhold_return.cxyt[1], touchhold_return.cxyt[2], touchhold_return.cxyt[3]]
+		CURRTRIAL.allfixationxyt[TASK.NFixations - FLAGS.waitingforTouches - 1] = CURRTRIAL.fixationxyt
+		if (CURRTRIAL.fixationtouchevent == "touchheld"){
+			CURRTRIAL.response = CURRTRIAL.correctitem
+		} //touched fixation
+		else if (CURRTRIAL.fixationtouchevent == "touchbroken" &&
+			TASK.RewardStage == 0){
+			CURRTRIAL.response = -1
+			FLAGS.waitingforTouches = 0 //exit loop
+		} //fixation task, but touched outside fixation
+		else if (CURRTRIAL.fixationtouchevent == "touchbroken" &&
+			TASK.RewardStage == 1){
+			//dms task, ok if touched outside, just wait for touch inside fixation area
+		}
+
+		//========= AWAIT CLEAR FIXATION =========//
+		for (var q in CANVAS.sequenceblank){frame.shown[q]=0}
+		frame.current=0;
+		if (FLAGS.waitingforTouches > 0){
+			await displayTrial(CANVAS.sequenceblank,CANVAS.tsequenceblank);
+		} //blank out screen
+	} //while waiting for NFixations
+	//============ (end) WHILE RUN FIXATION SCREEN ============//
+
+	//============== AWAIT SHOW SAMPLE THEN TEST ==============//
+	if (TASK.RewardStage === 1){
+		frame.shown=[]
+		for (var q in CANVAS.sequence){frame.shown[q]=0} 
+		frame.current=0
+		CURRTRIAL.tsequenceactual = await displayTrial(CANVAS.sequence,CANVAS.tsequence);
+		CURRTRIAL.tsequencedesired = CANVAS.tsequence
+		audiocontext.suspend()
+
+		//========= AWAIT TOUCH RESPONSE =========//
+		FLAGS.waitingforTouches = 1
+		if (TASK.HideTestDistractors >= 1){
+			FLAGS.punishOutsideTouch = 1
+		}
+		else {
+			FLAGS.punishOutsideTouch = 0			
+		}
+		var p1 = touchhold_promise(0,boundingBoxesChoice,FLAGS.punishOutsideTouch)
+		var p2 = choiceTimeOut(TASK.ChoiceTimeOut)
+
+		var race_return = await Promise.race([p1,p2])
+		CURRTRIAL.responsetouchevent = race_return.type
+		CURRTRIAL.response = race_return.cxyt[0]
+		CURRTRIAL.responsexyt = [race_return.cxyt[1], race_return.cxyt[2], race_return.cxyt[3]]
+
+		// Keep track of repeated responses to one side
+		if (CURRTRIAL.num > 0 && FLAGS.savedata && CURRTRIAL.responsetouchevent == "touchheld"){
+			if (CURRTRIAL.response==trialhistory.response[trialhistory.correct.length-1]){
+				FLAGS.stickyresponse++;
+			}
+			else {
+				FLAGS.stickyresponse=0;
+			}
+		} //if
+	} //if TASK.RewardStage
+
+	if (CURRTRIAL.response == CURRTRIAL.correctitem){ CURRTRIAL.correct = 1; }
+	else { CURRTRIAL.correct=0; }
+
+	console.log('response:', CURRTRIAL.response)
+	console.log('correct response', CURRTRIAL.correctitem)
+
+	//============ DETERMINE NUMBER OF REWARDS ============//
+	if (CURRTRIAL.correct){
+		if (FLAGS.savedata && (CURRTRIAL.starttime - trialhistory.starttime[trialhistory.starttime.length-1] < TASK.ConsecutiveHitsITI || CURRTRIAL.num==0)){
+			// if correct within bonus interval
+			FLAGS.consecutivehits++
+		}
+		else {
+			// took too long, set to 1
+			FLAGS.consecutivehits=1
+		}
+		CURRTRIAL.nreward = 1 + Math.floor(FLAGS.consecutivehits / TASK.NConsecutiveHitsforBonus)
+		if (CURRTRIAL.nreward > TASK.NRewardMax){
+			CURRTRIAL.nreward = TASK.NRewardMax
+		}
+	}
+	else if (!CURRTRIAL.correct){
+			FLAGS.consecutivehits=0;
+			CURRTRIAL.nreward = 0;
+	} //# of rewards to give
+	ENV.RewardDuration = setReward();
+	
+	//============ DELIVER REWARD/PUNISH ============//
+	// REWARD
+	if (CURRTRIAL.correct){
+		CANVAS.sequencepost[1]="reward";
+		CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+ENV.RewardDuration*1000;
+
+		for (var q = 0; q <= CURRTRIAL.nreward-1; q++){
+			frame.shown=[];
+			for (var q2 in CANVAS.sequencepost){frame.shown[q2]=0}; frame.current=0;
+
+			playSound(2);
+			var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost)
+			if (ble.connected == false){
+				await Promise.all([p1])
+			}
+			else if (ble.connected == true){
+				var p2 = writepumpdurationtoBLE(Math.round(ENV.RewardDuration*1000))
+				await Promise.all([p1, p2])
+			}
+		} //for nrewards
+	}
+	//PUNISH
+	else if (!CURRTRIAL.correct) {
+		CANVAS.sequencepost[1] = "punish";
+		CANVAS.tsequencepost[2] = CANVAS.tsequencepost[1]+TASK.PunishTimeOut;
+		frame.shown=[];
+		for (var q in CANVAS.sequencepost){frame.shown[q]=0}; frame.current=0;
+
+		var p1 = displayTrial(CANVAS.sequencepost,CANVAS.tsequencepost);
+		var num_trials_to_buffer_in_punishperiod = 20
+		var p2 = TQ.generate_trials(num_trials_to_buffer_in_punishperiod)
+		playSound(3);
+		console.time('punish download/timeout')
+		await Promise.all([p1,p2])
+		console.timeEnd('punish download/timeout')
+	}
+	//============ (end) DELIVER REWARD/PUNISH ============//
+
+	//================= HOUSEKEEPING =================//
+	CURRTRIAL.lastTrialCompleted = new Date()
+	// Update TRIAL only if saving data
+	if (FLAGS.savedata == 1){
+		// Update trial tracking variables
+		updateTRIAL() //appends current trial info
+		updateTrialHistory() //appends to running trial history
+
+		// Run automator
+		if (TASK.Automator !=0){	
+			await automateTask(automator_data, trialhistory);
+		}
+
+		// Save data asynchronously
+		saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL);
+	}
+
+	if (FLAGS.need2saveParameters == 1){
+		FLAGS.need2saveParameters = saveParameterstoDropbox(); // Save parameters asynchronously
+	}
+
+	//FLAGS.need2loadParameters=1: reload task which automatically creates a new data file
+	checkParameterFileStatus()
+	if ( (new Date).getDate() != ENV.CurrentDate.getDate()){
+		FLAGS.need2loadParameters = 1
+	} //if new day
+	//================= (end) HOUSEKEEPING =================//
+
+	updateHeadsUpDisplay();
+	console.log('End of trial ', CURRTRIAL.num, '. TRIAL: ', TRIAL)
+	CURRTRIAL.num++
+}
+})();
+
+</script>
+</body>
+
+</html>

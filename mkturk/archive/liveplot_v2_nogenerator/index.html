@@ -1,0 +1,813 @@
+<!doctype html>
+<html>
+<head>
+    <title id="page_title">liveplot_nightly</title>
+
+<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+<script src="utils.js"></script>
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="liveplot_googlecharts.js" type="text/javascript"></script>
+
+<style type='text/css'>
+	.small-font{
+		font-size: 8px;
+	}
+	.medium-font{
+		font-size: 10px;
+	}
+</style>
+
+<script type="text/javascript">
+// Flow: 
+// loadGoogleCharts --> getFileListDropbox
+// checkFileStatus -- wait 1 second -- if new data -->
+// readDatafromDropbox --> initializeChartData --> updatePlots
+
+// SECTIONS:
+//================== GOOGLE CHARTS LOADING ==================//
+//================== DROPBOX STUFF ==================//
+//================== DATA HANDLING ==================//
+//================== PLOTTING ==================//
+//================== UTILS ==================//
+
+//================== GOOGLE CHARTS LOADING ==================//
+// Asynchronous: Live plotting using google charts
+function loadGoogleCharts(){
+	// Load the Visualization API and the piechart package.
+	google.charts.load('current', {'packages':['corechart', 'bar','table','controls']});
+	google.charts.setOnLoadCallback(function(){
+
+		dataPerformance = new google.visualization.DataTable()
+		dataPerformance.addColumn('number','currentTrial')
+		dataPerformance.addColumn('number','currentPerformance')
+
+		dataCumulative = new google.visualization.DataTable()
+		dataCumulative.addColumn('datetime','time')
+		dataCumulative.addColumn('number','cumulativeTrials')
+		dataCumulative.addColumn('number','cumulativePerformance')
+
+		dataConfusion = new google.visualization.DataTable();
+
+		dataConfusion.addColumn('string','blo');
+		for (var i=0; i<=catlist.length-1; i++){
+			dataConfusion.addColumn('number',objlabels[catlist[i]]);			
+		} //sample labels
+
+		for (var i=0; i<=catlist.length-1; i++){
+			var row =[objlabels[catlist[i]]];
+			for (var j=0; j<=catlist.length-1; j++){
+				row[j+1]=0;
+			}
+			dataConfusion.addRow(row);
+		} //test labels
+
+		// Create a dashboard.
+        dashboard1 = new google.visualization.Dashboard(
+            document.getElementById('dashboard1_div'));
+
+		// Initialize plotting elements
+		// See for chartrange example: https://google-developers.appspot.com/chart/interactive/docs/gallery/controls_5cece98b344aa0b1575282db7d34d5f4.frame
+		livesliderTrial = new google.visualization.ControlWrapper({
+			'controlType': 'ChartRangeFilter',
+			'containerId': 'filtertrial_div',
+			'options': livesliderTrialOptions,
+			'state': {'range': {'start': 0, 'end': 100}}
+       	}) //wrapper
+
+		liveline = new google.visualization.ChartWrapper({
+			'chartType': 'LineChart',
+			'containerId': 'line_div'
+		})
+
+        dashboard2 = new google.visualization.Dashboard(
+            document.getElementById('dashboard2_div'));
+
+		livesliderTime = new google.visualization.ControlWrapper({
+			'controlType': 'ChartRangeFilter',
+			'containerId': 'filtertime_div',
+			'options': livesliderTimeOptions,
+			'state': {'range': {'start': 0, 'end': 100}}
+       	}) //wrapper
+
+		livearea = new google.visualization.ChartWrapper({
+			'chartType': 'AreaChart',
+			'containerId': 'area_div'
+		})
+
+        // Establish dependencies, declaring that the sliders drive 'liveline' & 'livearea',
+        // so that data will only display for entries that are let through
+        // given the chosen slider range.
+        dashboard1.bind(livesliderTrial, liveline)
+        dashboard2.bind(livesliderTime, livearea)
+
+		livebar = new google.visualization.ColumnChart(document.getElementById('bar_div'));
+		livetable = new google.visualization.Table(document.getElementById('table_div'));
+
+		// data formatters
+		formatterDate = new google.visualization.DateFormat({pattern: 'h aa'})
+		formatterDigits = new google.visualization.NumberFormat({fractionDigits: 2})
+		formatterColor = new google.visualization.ColorFormat();
+
+		// cell color formatting --> https://developers.google.com/chart/interactive/docs/reference#colorformatter
+		dx=1/(colormapJet.length-1);
+		for (var i=0; i<=colormapJet.length-1; i++){
+			formatterColor.addRange(i*dx,(i+1)*dx,'gray',colormapJet[i])
+		}
+
+		getFileListDropbox2();
+	})
+}
+//================== GOOGLE CHARTS LOADING (end) ==================//
+
+//================== DROPBOX STUFF ==================//
+var DBX_CLIENT_ID = "8mspoy956tdhfy9"
+var DBX_REDIRECT_URI = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/test_apiv2/public/index.html"
+
+//return whether user was redirected here after authenticating
+function isAuthenticated(){
+	return !!getAccessTokenFromUrl()
+}
+
+//parse access token from url if in urls hash
+function getAccessTokenFromUrl(){
+	return utils.parseQueryString(window.location.hash).access_token
+}
+
+// Asynchronous: Get file list from dropbox directory
+function getFileListDropbox2(){
+	dbx.filesListFolder({path: file.dir}).then(function(response){
+		console.log("success: read directory ");
+
+//FilesFileMetadata: tag/name/id/rev/size/...
+//   http://dropbox.github.io/dropbox-sdk-js/global.html#FilesFileMetadata
+		var menuobj = document.getElementById("file_list");
+		for (var q = response.entries.length-1; q>=0; q--){
+			if (response.entries[q][".tag"] == "file"){
+				file.list[q] = response.entries[q].name
+				file.pathlist[q] = response.entries[q].path_display
+
+				//add to menu as option
+				var opt = document.createElement('option')
+				opt.value = q
+				opt.innerHTML = file.list[q]
+				menuobj.appendChild(opt)
+			}
+		}
+		// file.name = file.dir + file.list[file.list.length-1]
+		file.name = file.pathlist[file.pathlist.length-1]
+		file.filehasChanged = true
+		readDatafromDropbox2()
+	})
+	.catch(function(error){
+		console.error(error)
+	})
+	return false
+}
+
+// Asynchronous: Check for file updates
+function checkFileStatus2(){
+	dbx.filesGetMetadata({path: file.name}).then(function(filemeta){
+		if (file.rev != filemeta.rev){
+			file.rev = filemeta.rev
+			file.datahasChanged = true
+			console.log('file was updated rev=' + file.rev)
+		}
+		else{
+			file.datahasChanged=false
+		}
+
+		if (file.filehasChanged == true || file.datahasChanged == true){
+			readDatafromDropbox2()
+		}
+		else {
+			setTimeout(function(){checkFileStatus2()},1000)
+		}
+	})
+	.catch(function(error){
+		console.error(error)
+	})
+	return false
+}
+
+//Asynchronous: Read data from selected file in dropbox
+function readDatafromDropbox2(){
+	dbx.filesDownload({path: file.name}).then(function(data){
+		console.log("success: loaded file size " + data.size);
+
+		file.rev = data.rev
+		file.dateSaved = new Date(data.client_modified)
+
+		//Parse date
+		var ind1 = file.name.indexOf("/2")
+		var ind2 = file.name.indexOf('_')
+		var datestr = file.name.substring(ind1+1,ind2)
+		file.dateCreated = new Date(datestr)
+
+		var reader = new FileReader()
+		reader.onload = function(e){
+			file.data=JSON.parse(reader.result)
+			parseImageInfo()
+		}
+		reader.readAsText(data.fileBlob)
+	})
+	.catch(function(error){
+		console.error(error)
+	})
+	return false
+}
+
+function parseImageInfo(){
+	if (file.data[0].ImageFolderSample==4 | file.data[0].ImageFolderSample==5){
+		objlabels = objlabelsMURI;
+		cat = catMURI;
+		catlist = catlistMURI;
+	}
+	else if (file.data[0].ImageFolderSample==9 | file.data[0].ImageFolderSample==10 | file.data[0].ImageFolderSample==11){
+		objlabels = objlabelsHVM;
+		cat = catHVM;
+		catlist = catlistHVM;
+	}
+	else if (file.data[0].ImageFolderSample==12 | file.data[0].ImageFolderSample==13 | file.data[0].ImageFolderSample==14 | file.data[0].ImageFolderSample==15){
+		objlabels = objlabelsCOCO;
+		cat = catCOCO;
+		catlist = catlistCOCO;
+	}			
+	else {
+		objlabels = objlabelsOBJ;
+		cat = catOBJ;
+		catlist = catlistOBJ;
+	}
+
+	if (file.filehasChanged==true){
+		initializeChartData()
+	}
+	else if (file.datahasChanged==true){
+		updatePlots()
+	}
+}
+//================== DROPBOX STUFF (end) ==================//
+
+
+//================== DATA HANDLING ==================//
+// Synchronous: Initialize chart data matrices
+function initializeChartData(){
+	dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
+	dataPerformance.removeColumns(0,dataPerformance.getNumberOfColumns());
+	dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
+	dataCumulative.removeColumns(0,dataCumulative.getNumberOfColumns());
+	dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
+	dataConfusion.removeColumns(0,dataConfusion.getNumberOfColumns());
+
+	dataPerformance.addColumn('number','currentTrial')
+	dataPerformance.addColumn('number','currentPerformance')
+	dataCumulative.addColumn('datetime','time') //0
+	dataCumulative.addColumn('number','cumulativeTrials') //1
+	dataCumulative.addColumn('number','cumulativePerformance') //2
+		
+	dataConfusion.addColumn('string','sample');
+	for (var i=0; i<=catlist.length-1; i++){
+		dataConfusion.addColumn('number',objlabels[catlist[i]]);			
+	} //sample labels
+
+	for (var i=0; i<=catlist.length-1; i++){
+		var row =[objlabels[catlist[i]]];
+		for (var j=0; j<=catlist.length-1; j++){
+			row[j+1]=0;
+		}
+		dataConfusion.addRow(row);
+	} //test labels
+
+	updatePlots()
+	file.filehasChanged=false
+}
+
+// Synchronous
+function toTask(){
+	task.rewardstage = 1;
+	if (typeof(file.data[0].RewardStage) != "undefined"){
+		task.rewardstage = file.data[0].RewardStage;
+	}
+	task.varsample = 3;
+	if (typeof(file.data[0].UsePrototypeforSample) != "undefined"){
+		if (file.data[0].UsePrototypeforSample == true){				
+			task.varsample = 0;
+		}
+	}
+	if (typeof(file.data[0].ImageFolderSample) != "undefined"){
+		task.varsample = file.data[0].ImageFolderSample;
+	}
+	task.sampleon = file.data[0].SampleON;
+	task.delay = file.data[0].SampleOFF;
+	if (typeof(file.data[0].KeepSampleON) != "undefined"){
+		if (file.data[0].KeepSampleON == 1){
+			task.delay = -1; //Sample left on
+		}
+	}
+
+	task.nway = file.data[0].Nway;
+	task.nobj = file.data[0].TestedObjects.length;
+
+	task.rewardper1000 = 0;
+	if (typeof(file.data[0].RewardPer1000Trials) != "undefined"){
+		task.rewardper1000 = Math.round(file.data[0].RewardPer1000Trials);
+	}
+}
+
+// Synchronous
+function toVitals(){
+	vitals.subject = file.data[0].Subject;
+	vitals.trials = file.data[0].Response.length;
+	vitals.time = Math.round(Math.round(file.data[0].StartTime[vitals.trials-1] - file.data[0].StartTime[0])/60000); //convert msec to minutes
+
+	if (typeof(file.data[0].BatteryLDT) != "undefined"){
+		vitals.batteryleft = Math.round(file.data[0].BatteryLDT[file.data[0].BatteryLDT.length-1][0]*100);
+		vitals.batteryused = Math.round(file.data[0].BatteryLDT[0][0]*100 - vitals.batteryleft);
+	}
+	else {
+		vitals.batteryleft = null;
+		vitals.batteryused = null;
+	}
+	var ncorrect = 0;
+	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
+  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){ // | file.data[0].RewardStage==0){
+  			ncorrect++;
+  		}
+	}
+	vitals.pctcorrect = Math.round(100 * ncorrect / file.data[0].Response.length);
+
+	vitals.rewardestimate = 0;
+	if (typeof(file.data[0].RewardPer1000Trials) != "undefined"){
+		vitals.rewardestimate = Math.round(file.data[0].RewardPer1000Trials * ncorrect / 1000);
+	}
+}
+
+// Synchronous
+function toPerformanceData(){
+	dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
+	dataCumulative.removeRows(0,dataCumulative.getNumberOfRows());
+
+	//Create the data table
+  	var xdata = []
+  	var ydata = []
+  	var ntotal = []
+  	var ncorrect = []
+  	var tcurrent = []
+  	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
+  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){ // | file.data[0].RewardStage==0){
+  			ydata[i]=1;
+  		}
+  		else {
+  			ydata[i]=0;
+  		}
+  		xdata[i]=i;
+
+  		//Cumulative trials & correct trials
+  		ntotal[i]=xdata.length
+  		if (i>0){ ncorrect[i]=ncorrect[i-1]+ydata[i] }
+  		else if (i==0) { ncorrect[i] = ydata[i] }
+  	}
+  	ydata = smooth(ydata,lineOptions.smooth);
+
+//Referencing to time file was last written & time of last trial rather than to file start.
+//Done because file can be changed on the fly which changes file start relative to performance.now()
+if (typeof file.data[0].ResponseXYT === 'undefined' || 
+	file.data[0].ResponseXYT.length < 1){
+	var tend = file.data[0].FixationXYT[file.data[0].FixationXYT.length-1][2]
+}
+else {
+	var tend = file.data[0].ResponseXYT[file.data[0].ResponseXYT.length-1][2]
+}
+
+  	for (var i=0; i<=ydata.length-1; i++){
+	  	dataPerformance.addRows([[xdata[i], ydata[i]]])
+
+  		var tfix = file.data[0].FixationXYT[i][2] //in milliseconds
+  		var t = new Date(file.dateSaved)
+  		t.setTime(t.getTime() - (tend - tfix))
+	  	dataCumulative.addRows([[new Date(t),ntotal[i],ncorrect[i]]])
+  	}
+  	formatterDate.format(dataCumulative,0)
+}
+
+// Synchronous
+function toConfusionData(){
+
+// SAMPLE
+	if(typeof file.data[0].ImageFolderSample === 'undefined'){
+		for (var i=0; i<=cat.length-1; i++){
+			catSample[i]=cat[i];
+		}
+	}
+	else{
+		if (file.data[0].ImageFolderSample === 0 || file.data[0].ImageFolderSample === 4 || file.data[0].ImageFolderSample ===9 || file.data[0].ImageFolderSample === 12){
+			for (var i=0; i<=catlist.length-1; i++){
+				catSample[i]=Math.floor(i/1);
+			}
+		}
+		else if (file.data[0].ImageFolderSample > 0){
+			for (var i=0; i<=cat.length-1; i++){
+				catSample[i]=cat[i];
+			}
+		}
+	}
+
+
+
+// TEST
+	if(typeof file.data[0].ImageFolderTest === 'undefined'){
+		for (var i=0; i<=cat.length-1; i++){
+			catTest[i]=cat[i];
+		}
+	}
+	else{
+		if (file.data[0].ImageFolderTest === 0 || file.data[0].ImageFolderTest === 4 || file.data[0].ImageFolderTest === 9 || file.data[0].ImageFolderTest === 12){
+			for (var i=0; i<=catlist.length-1; i++){
+				catTest[i]=Math.floor(i/1);
+			}
+		}
+		else if (file.data[0].ImageFolderTest > 0){
+			for (var i=0; i<=cat.length-1; i++){
+				catTest[i]=cat[i];
+			}
+		}
+	}
+
+
+	//Create bar chart groupings
+	// dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
+
+	//Initialize confusion matrix
+	var pctConfusion=new Array(catlist.length);
+	var nConfusion=new Array(catlist.length);
+	var cntConfusion=new Array(catlist.length);
+	for (var i=0; i<=catlist.length-1; i++){
+		pctConfusion[i]=new Array(catlist.length);
+		nConfusion[i]=new Array(catlist.length);
+		cntConfusion[i]=new Array(catlist.length);
+		pctConfusion[i].fill(0);
+		nConfusion[i].fill(0);
+		cntConfusion[i].fill(0);
+	}
+
+	//Fill confusion matrix
+	var samplecatidx;
+	var testcatidx;
+	for (var i=0; i<=file.data[0].Sample.length-1; i++){
+		samplecatidx = catlist.indexOf(catSample[file.data[0].Sample[i]]);
+
+		for (var j=0; j<=file.data[0].Test[i].length-1; j++){
+			testcatidx = catlist.indexOf(catTest[file.data[0].Test[i][j]]);
+
+			cntConfusion[samplecatidx][testcatidx]++;
+
+			// if that test item was chosen
+			if (file.data[0].RewardStage==1 & file.data[0].Response[i] == j){
+				nConfusion[samplecatidx][testcatidx]++;
+			}
+
+			pctConfusion[samplecatidx][testcatidx]=nConfusion[samplecatidx][testcatidx]/cntConfusion[samplecatidx][testcatidx];
+		} //for j test
+	} //for i trials
+
+	for (var i=0; i<=catlist.length-1; i++){
+		for (var j=0; j<=catlist.length-1; j++){
+			dataConfusion.setValue(i,j+1,pctConfusion[i][j]);
+		} //for j test
+	} //for i sample
+} //function toConfusionData
+//================== DATA HANDLING (end) ==================//
+
+
+//================== PLOTTING ==================//
+// Synchronous
+function updatePlots() {
+	toVitals();
+	toTask();
+	toPerformanceData();
+	toConfusionData();
+	addVitalsText();
+	addTaskText();
+
+	drawLine() //current
+	drawArea() //cumulative
+	drawBar();
+	drawTable();
+	file.datahasChanged=false
+	checkFileStatus2();
+}
+
+// Synchronous
+function addVitalsText(){
+	lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)  Last Trial:" + file.dateSaved.toLocaleTimeString('en-US')
+	titleobj.innerHTML = vitals.subject;
+}
+
+// Synchronous
+function addTaskText(){
+	var rewardedfor = "";
+	if (task.rewardstage == 0){
+		rewardedfor = "fixation";
+	}
+	else if (task.rewardstage == 1){
+		rewardedfor = "Match";
+	}
+
+	tasktextobj.innerHTML = "Rewarded for <b>" + rewardedfor + "</b> (" + task.rewardper1000 + "mL/1000)" + "<br>Sample var <b>" + task.varsample + "</b>, " + task.sampleon + "ms" + "<br>Delay " + task.delay + "ms" + "<br>" + task.nway + "-way" + ", " + task.nobj + "-obj";
+}
+
+//Synchronous
+function drawLine(){
+	var nrows = dataPerformance.getNumberOfRows()
+	var sliderstate = livesliderTrial.getState()
+
+	//updating slider
+	if (file.datahasChanged == true && file.filehasChanged == false){
+		if (nrows <= 100){
+			// expand window size automatically up to 100
+			sliderstate.range.start = 0
+			sliderstate.range.end = nrows
+		}
+		else {
+			//shift slider over
+			dtrials = nrows - ntrials
+			sliderstate.range.start = sliderstate.range.start + dtrials
+			sliderstate.range.end = sliderstate.range.end + dtrials
+		}
+	}
+	else if (file.filehasChanged == true){
+		//shift slider to end
+		dslider = 100
+		sliderstate.range.start = nrows - dslider
+		sliderstate.range.end = nrows
+		if (sliderstate.range.start < 0){
+			sliderstate.range.start = 0
+		}
+	}
+
+	liveline.setOptions(lineOptions)
+
+ 	//move slider which will drive replotting
+	livesliderTrial.setState({'range': {'start': sliderstate.range.start,'end': sliderstate.range.end}})
+	dashboard1.draw(dataPerformance)
+	ntrials = nrows //new trial range
+}
+
+//Synchronous
+function drawArea(){
+	var sliderstate = livesliderTime.getState()
+
+	var tmin = new Date(dataCumulative.getColumnRange(0).min)
+	var tmax = new Date(dataCumulative.getColumnRange(0).max)
+
+	var trange = tmax.getTime() - tmin.getTime()
+	var onehr = 60*60*1000
+
+	//updating slider
+	if (file.datahasChanged == true && file.filehasChanged == false){
+		if (trange < onehr){
+			// expand window size automatically up to 100
+			sliderstate.range.start = tmin
+			sliderstate.range.end = tmax
+		}
+		else {
+			//shift slider over
+			var dt = tmax.getTime() - tlast.getTime()
+			sliderstate.range.start.setTime(sliderstate.range.start.getTime() + dt)
+			sliderstate.range.end.setTime(sliderstate.range.end.getTime() + dt)
+		}
+	}
+	else if (file.filehasChanged == true){
+		//shift slider to end
+		sliderstate.range.start = new Date(tmax.getTime() - onehr)
+		sliderstate.range.end = tmax
+		if (sliderstate.range.start.getTime() < tmin.getTime()){
+			sliderstate.range.start = new Date(tmin.getTime())
+		}
+	}
+	tlast = new Date(dataCumulative.getColumnRange(0).max)
+
+ 	//move slider which will drive replotting
+	livesliderTime.setState({'range': {'start': sliderstate.range.start,'end': sliderstate.range.end}})
+	livearea.setOptions(areaOptions)
+	dashboard2.draw(dataCumulative)
+}
+
+
+// Synchronous
+function drawBar(){
+	livebar.draw(dataConfusion,barOptions);
+}
+
+// Synchronous
+function drawTable(){
+	// format data
+	for (var i=1; i<=dataConfusion.getNumberOfColumns()-1; i++){
+		formatterDigits.format(dataConfusion,i)
+		formatterColor.format(dataConfusion,i)
+	}
+
+	livetable.draw(dataConfusionView,tableOptions)
+	livetable.draw(dataConfusion,tableOptions)
+}
+//================== PLOTTING (end) ==================//
+
+
+//================== UTILS ==================//
+// Synchronous
+function smooth(data,n){
+	var smoothed_data=[];
+	for (var i=0; i<=data.length-1; i++){
+		if (i<n-1){
+			smoothed_data[i]=data[i];
+		}
+		else{
+			var sub = data.slice(i-n+1,i+1);
+			smoothed_data[i] = sub.reduce(function(a,b){return a + b;}) / n;
+		}
+	}
+	return smoothed_data;
+}
+
+function filelist_listener(event){
+	console.log("new file");
+	file.name=file.dir + file.list[this.value];
+	file.filehasChanged=true;
+}
+
+//polyfill for array.prototype.fill
+if (!Array.prototype.fill) {
+  Array.prototype.fill = function(value) {
+    if (this == null) {
+      throw new TypeError('this is null or not defined');
+    }
+    var O = Object(this);
+    var len = O.length >>> 0;
+    var start = arguments[1];
+    var relativeStart = start >> 0;
+    var k = relativeStart < 0 ?
+      Math.max(len + relativeStart, 0) :
+      Math.min(relativeStart, len);
+    var end = arguments[2];
+    var relativeEnd = end === undefined ?
+      len : end >> 0;
+    var final = relativeEnd < 0 ?
+      Math.max(len + relativeEnd, 0) :
+      Math.min(relativeEnd, len);
+    while (k < final) {
+      O[k] = value;
+      k++;
+    }
+    return O;
+  };
+}
+//================== UTILS (end) ==================//
+
+</script>
+</head>
+
+
+<body>
+  <h1>liveplot_nightly</h1>
+  <div id="filelist_div">
+	  <select id="file_list"></select> <!--Pull down menu that will hold file list-->
+	</div>
+  <div id="dashboard1_div">
+  	<div id="line_div"></div> <!--Div that will hold the line chart-->
+  	<div id="filtertrial_div"></div>
+  </div>
+  <div id="dashboard2_div">
+  	<div id="area_div"></div> <!--Div that will hold the area chart-->
+  	<div id="filtertime_div"></div>
+  </div>
+  <div id="bar_div"></div> <!--Div that will hold the bar chart-->
+  <div id="table_div"></div> <!--Div that will hold the table chart-->
+  <p id="task_text"></p>
+
+<script type="text/javascript">
+var file={
+			dir: "/MonkeyTurk/",
+			list: [],
+			pathlist: [],
+			name: "/MonkeyTurk/data.txt",
+			data: null,
+			ver: null,
+			date: null,
+			dateCreated: null,
+			datahasChanged: false,
+			filehasChanged: false,
+		};
+
+var titleobj = document.getElementById("page_title");
+var menuobj = document.getElementById("file_list");
+var tasktextobj = document.getElementById("task_text");
+menuobj.addEventListener("change",filelist_listener,false);
+
+//_____________ LABELS (begin)
+var objlabels=['wrench','rhino','leg','camel','tank','bird','shorts','elephant','house','hanger','pen','hammer','zebra','fork','guitar','bear','watch','dog','spider','truck','drawer table','calculator','gun','knife','head','shoe','drum','cat','camera','train','frog','shirt','helicopter','pear','piano','horse','plane'];
+var objlabelsOBJ = objlabels;
+var objlabelsMURI=['bucket','cradle','dishwasher','drum','fourpostbed','fryingpan','golfcart','jeep','microphone','microwave','panpipe','parkbench','piano','plate','pooltable','stationwagon','sunglasses','umbrella','ant','cat','chameleon','chihuahua','cockroach','crockodile','eel','gilamonster','hound','lizard','mantis','mongoose','pig','platypus','spaniel','turtle','vase','bookcase','stove','glockenspiel','chiffonier','pot','gokart','hotrod','subwoofer','oven','bagpipe','flatbench','accordion','bowl','pinballmachine','taxi','goggles','awning','hornet','horse','snake','termite','gecko','cod','walkingstick','meerkat','llama','echidna'];
+var objlabelsHVM=['bear','elephant','table','head','car','dog','turtle','apple','plane','chair']
+var objlabelsCOCO=['bear','elephant','head','car','dog','apple','chair','plane','bird','zebra']
+
+var cat=[];
+for (var i=0; i<=3699; i++){cat[i]=Math.floor(i/100);}
+
+var catOBJ = cat;
+
+var catMURI=[];
+var perobjvec=[12,8,10,12,6,12,8,10,12,12,8,10,6,14,6,6,12,10,8,6,6,8,6,8,12,6,12,6,8,6,10,12,6,6,12,8,10,12,6,12,8,10,12,12,8,10,6,14,6,6,12,10,8,32,24,6,8,12,8,6,10,12];
+var cnt=0;
+for (var i=0; i<=perobjvec.length-1; i++){
+	for (var j=0; j<=perobjvec[i]-1; j++){
+		catMURI[cnt]=i;
+		cnt++;
+	}
+}
+
+catHVM=[]
+for (var i=0; i<=999; i++){catHVM[i]=Math.floor(i/100)}
+
+catCOCO=[]
+for (var i=0; i<=999; i++){catCOCO[i]=Math.floor(i/100)}
+
+
+var catSample=[];
+var catTest=[];
+
+// Generate cat list
+var catlist=[];
+for (var i=0; i<=cat.length-1; i++){
+	if (catlist.indexOf(cat[i]) == -1){
+		catlist[catlist.length]=cat[i]; //add category
+	}//if
+}//for
+var catlistOBJ = catlist;
+
+var catlistMURI=[];
+for (var i=0; i<=catMURI.length-1; i++){
+	if (catlistMURI.indexOf(catMURI[i]) == -1){
+		catlistMURI[catlistMURI.length]=catMURI[i]; //add category
+	}//if
+}//for
+
+var catlistHVM=[];
+for (var i=0; i<=catHVM.length-1; i++){
+	if (catlistHVM.indexOf(catHVM[i]) == -1){
+		catlistHVM[catlistHVM.length]=catHVM[i]; //add category
+	}//if
+}//for
+
+var catlistCOCO=[];
+for (var i=0; i<=catCOCO.length-1; i++){
+	if (catlistCOCO.indexOf(catCOCO[i]) == -1){
+		catlistCOCO[catlistCOCO.length]=catCOCO[i]; //add category
+	}//if
+}//for
+//_____________ LABELS (end)
+
+var vitals={
+	subject: null,
+	pctcorrect: 0,
+	trials: 0,
+	time: 0,
+	batteryleft: 0,
+	batteryused: 0,
+	rewardestimate: 0,
+}
+
+var task={
+	rewardstage: 0,
+	rewardper1000: 0,
+	varsample: 3,
+	sampleon: 0,
+	delay: 0,
+	nway: 0,
+	nobj: 0,
+}
+
+var dataPerformance=null;
+var dataCumulative=null;
+var dataConfusion=null;
+var dataConfusionView=null;
+var liveline=null;
+var livebar=null;
+var livetable=null;
+var formatterDigits=null;
+var formatterColor=null;
+
+var trialrange=[0,0]
+
+if (isAuthenticated()){
+	//Create an instance of Dropbox with the access token
+	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
+	loadGoogleCharts();
+}
+else {
+	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
+	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
+	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,707 @@
+<!doctype html>
+<html>
+<head>
+    <title id="page_title">liveplot</title>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.2/dropbox.min.js"></script>
+
+<!--Load the AJAX API-->
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<script type="text/javascript">
+
+// add cell color formatting --> https://developers.google.com/chart/interactive/docs/reference#colorformatter
+
+	// Dropbox stuff
+	var client = new Dropbox.Client({key: "k0j0bakwfhc0n67"}); // Dropbox.client help: http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html
+	var showError = function(error){console.log(error.status)};
+
+	// Dropbox: authenticate
+	client.authenticate(function(error,client){
+		if (error){
+			return showError(error);
+		}
+		console.log('success: client authenticated');
+	});
+
+	// Dropbox: Show client info
+	client.getAccountInfo(function(error, accountInfo) {
+	  if (error) {
+	    return showError(error);  // Something went wrong.
+	  }
+	  console.log("Hello, Dropbox User " + accountInfo.name + "!");
+	});
+
+	//polyfill for array.prototype.fill
+	if (!Array.prototype.fill) {
+	  Array.prototype.fill = function(value) {
+	    if (this == null) {
+	      throw new TypeError('this is null or not defined');
+	    }
+	    var O = Object(this);
+	    var len = O.length >>> 0;
+	    var start = arguments[1];
+	    var relativeStart = start >> 0;
+	    var k = relativeStart < 0 ?
+	      Math.max(len + relativeStart, 0) :
+	      Math.min(relativeStart, len);
+	    var end = arguments[2];
+	    var relativeEnd = end === undefined ?
+	      len : end >> 0;
+	    var final = relativeEnd < 0 ?
+	      Math.max(len + relativeEnd, 0) :
+	      Math.min(relativeEnd, len);
+	    while (k < final) {
+	      O[k] = value;
+	      k++;
+	    }
+	    return O;
+	  };
+	}
+
+	function initializeChartData(){
+		return new Promise(function(resolve,reject){
+			dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
+			dataPerformance.removeColumns(0,dataPerformance.getNumberOfColumns());
+			dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
+			dataConfusion.removeColumns(0,dataConfusion.getNumberOfColumns());
+
+			dataPerformance.addColumn('number','trial#');
+			dataPerformance.addColumn('number','subjectperformance');
+			
+			dataConfusion.addColumn('string','sample');
+			for (var i=0; i<=catlist.length-1; i++){
+				dataConfusion.addColumn('number',objlabels[catlist[i]]);			
+			} //sample labels
+
+			for (var i=0; i<=catlist.length-1; i++){
+				var row =[objlabels[catlist[i]]];
+				for (var j=0; j<=catlist.length-1; j++){
+					row[j+1]=0;
+				}
+				dataConfusion.addRow(row);
+			} //test labels
+
+			resolve(1)}).then();
+	}
+
+	function loadGoogleCharts(){
+		return new Promise(function(resolve,reject){
+			// Live plotting using google charts
+			// Load the Visualization API and the piechart package.
+			google.load('visualization', '1.1', {'packages':['corechart', 'bar']});
+			google.setOnLoadCallback(function(){
+				dataPerformance = new google.visualization.DataTable();
+				dataPerformance.addColumn('number','trial#');
+				dataPerformance.addColumn('number','subjectperformance');
+				dataConfusion = new google.visualization.DataTable();
+
+				dataConfusion.addColumn('string','sample');
+				for (var i=0; i<=catlist.length-1; i++){
+					dataConfusion.addColumn('number',objlabels[catlist[i]]);			
+				} //sample labels
+
+				for (var i=0; i<=catlist.length-1; i++){
+					var row =[objlabels[catlist[i]]];
+					for (var j=0; j<=catlist.length-1; j++){
+						row[j+1]=0;
+					}
+					dataConfusion.addRow(row);
+				} //test labels
+
+				liveline = new google.visualization.LineChart(document.getElementById('line_div'));
+				// livebar = new google.charts.Bar(document.getElementById('bar_div')); //material, does not include animation
+				livebar = new google.visualization.ColumnChart(document.getElementById('bar_div'));
+				resolve(1)});
+		}).then();
+	}
+
+	function filelist_listener(event){
+		console.log("new file");
+		file.name=file.dir + file.list[this.value];
+		file.filehasChanged=true;
+	}
+
+	//Get file list from dropbox diretory
+	function getFileListDropbox() {
+		return new Promise(function(resolve,reject){
+	        client.readdir(file.dir,function(error,string,filestat,filestat_array){
+				if (error){
+					return showError(error); //Something went wrong
+				}
+				console.log("success: read directory ");
+
+				var menuobj = document.getElementById("file_list");
+				for (var q=filestat_array.length-1; q>=0; q--){
+					if (filestat_array[q].isFile == true && filestat_array[q].name != ".directory"){
+						file.list[q] = filestat_array[q].name;
+
+						// add menu option
+						var opt = document.createElement('option');
+						opt.value = q;
+						opt.innerHTML = file.list[q];
+						menuobj.appendChild(opt);
+					}
+				}
+
+				file.name=file.dir + file.list[file.list.length-1];
+				resolve(1);
+			})
+		}).then();
+	}
+
+	//Read data from dropbox
+	function readDatafromDropbox() {
+		return new Promise(function(resolve,reject){
+	        client.readFile(file.name,function(error,string,filestat,httpinfo){
+				if (error){
+					return showError(error); //Something went wrong
+				}
+				console.log("success: read file size " + filestat.size);
+				file.data=JSON.parse(string);
+				file.ver=filestat.versionTag;
+				file.date=filestat.modifiedAt;
+				console.log(file.data);
+
+				if (file.data[0].ImageFolderSample==4 | file.data[0].ImageFolderSample==5){
+					objlabels = objlabelsMURI;
+					cat = catMURI;
+					catlist = catlistMURI;
+				}
+				else {
+					objlabels = objlabelsOBJ;
+					cat = catOBJ;
+					catlist = catlistOBJ;
+				}
+
+				// toVitals();
+				// toTask();
+				// toPerformanceData();
+				// toConfusionData();
+				// addVitalsText();
+				// addTaskText();
+				// drawLine();
+				// drawBar();
+				resolve(1);
+			})
+		}).then();
+	}
+
+function toMeasures() {
+		return new Promise(function(resolve,reject){
+				toVitals();
+				toTask();
+				toPerformanceData();
+				toConfusionData();
+				addVitalsText();
+				addTaskText();
+				drawLine();
+				drawBar();
+				resolve(1);
+		}).then();
+	}	
+
+	function checkFileStatus(){
+		var resolveFunc
+		var errFunc
+		p = new Promise(function(resolve,reject){
+			resolveFunc = resolve;
+			errFunc = reject;
+		}).then();
+
+		client.stat(file.name,function(error,filestat){
+			if (error){
+				return showError(error); //Something went wrong
+			}
+			if (file.ver != filestat.versionTag){
+				file.ver=filestat.versionTag;
+				file.datahasChanged=true;
+				console.log('file was updated ver=' + file.ver);
+			}
+			else {
+				file.datahasChanged=false;
+				// console.log('file did not change ver=' + filestat.versionTag);
+			}
+			setTimeout(function(){resolveFunc(1);},2000);
+		});
+
+		return p;
+	}
+
+	function toTask(){
+		task.rewardstage = 1;
+		if (typeof(file.data[0].RewardStage) != "undefined"){
+			task.rewardstage = file.data[0].RewardStage;
+		}
+		task.varsample = 3;
+		if (typeof(file.data[0].UsePrototypeforSample) != "undefined"){
+			if (file.data[0].UsePrototypeforSample == true){				
+				task.varsample = 0;
+			}
+		}
+		if (typeof(file.data[0].ImageFolderSample) != "undefined"){
+			task.varsample = file.data[0].ImageFolderSample;
+		}
+		task.sampleon = file.data[0].SampleON;
+		task.delay = file.data[0].SampleOFF;
+		if (typeof(file.data[0].KeepSampleON) != "undefined"){
+			if (file.data[0].KeepSampleON == 1){
+				task.delay = -1; //Sample left on
+			}
+		}
+
+		task.nway = file.data[0].Nway;
+		task.nobj = file.data[0].TestedObjects.length;
+
+		task.rewardper1000 = 0;
+		if (typeof(file.data[0].RewardPer1000Trials) != "undefined"){
+			task.rewardper1000 = Math.round(file.data[0].RewardPer1000Trials);
+		}
+	}
+
+	function toVitals(){
+		vitals.subject = file.data[0].Subject;
+		vitals.trials = file.data[0].Response.length;
+		vitals.time = Math.round(Math.round(file.data[0].StartTime[vitals.trials-1] - file.data[0].StartTime[0])/60000); //convert msec to minutes
+
+		if (typeof(file.data[0].BatteryLDT) != "undefined"){
+			vitals.batteryleft = Math.round(file.data[0].BatteryLDT[file.data[0].BatteryLDT.length-1][0]*100);
+			vitals.batteryused = Math.round(file.data[0].BatteryLDT[0][0]*100 - vitals.batteryleft);
+		}
+		else {
+			vitals.batteryleft = null;
+			vitals.batteryused = null;
+		}
+		var ncorrect = 0;
+		for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
+	  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){ // | file.data[0].RewardStage==0){
+	  			ncorrect++;
+	  		}
+		}
+		vitals.pctcorrect = Math.round(100 * ncorrect / file.data[0].Response.length);
+
+		vitals.rewardestimate = 0;
+		if (typeof(file.data[0].RewardPer1000Trials) != "undefined"){
+			vitals.rewardestimate = Math.round(file.data[0].RewardPer1000Trials * ncorrect / 1000);
+		}
+	}
+
+	function toPerformanceData(){
+		dataPerformance.removeRows(0,dataPerformance.getNumberOfRows());
+
+		//Create the data table
+	  	var xdata = [];
+	  	var ydata = [];
+	  	for (var i=0; i<=file.data[0].CorrectItem.length-1; i++){
+	  		if (file.data[0].CorrectItem[i] == file.data[0].Response[i]){ // | file.data[0].RewardStage==0){
+	  			ydata[i]=1;
+	  		}
+	  		else {
+	  			ydata[i]=0;
+	  		}
+	  		xdata[i]=i;
+	  	}
+	  	ydata = smooth(ydata,lineOptions.smooth);
+
+	  	for (var i=0; i<=ydata.length-1; i++){
+		  	dataPerformance.addRows([[xdata[i], ydata[i]]]);
+	  	}
+	}
+
+	function toConfusionData(){
+
+		if(typeof file.data[0].ImageFolderSample === 'undefined'){
+			for (var i=0; i<=cat.length-1; i++){
+				catSample[i]=cat[i];
+			}
+		}
+		else{
+			if (file.data[0].ImageFolderSample === 0 || file.data[0].ImageFolderSample === 4){
+				for (var i=0; i<=catlist.length-1; i++){
+					catSample[i]=Math.floor(i/1);
+				}
+			}
+			else if (file.data[0].ImageFolderSample > 0){
+				for (var i=0; i<=cat.length-1; i++){
+					catSample[i]=cat[i];
+				}
+			}
+		}
+
+		if(typeof file.data[0].ImageFolderTest === 'undefined'){
+			for (var i=0; i<=cat.length-1; i++){
+				catTest[i]=cat[i];
+			}
+		}
+		else{
+			if (file.data[0].ImageFolderTest === 0 || file.data[0].ImageFolderTest === 4){
+				for (var i=0; i<=catlist.length-1; i++){
+					catTest[i]=Math.floor(i/1);
+				}
+			}
+			else if (file.data[0].ImageFolderTest > 0){
+				for (var i=0; i<=cat.length-1; i++){
+					catTest[i]=cat[i];
+				}
+			}
+		}
+
+
+		//Create bar chart groupings
+		// dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
+
+		//Initialize confusion matrix
+		var pctConfusion=new Array(catlist.length);
+		var nConfusion=new Array(catlist.length);
+		var cntConfusion=new Array(catlist.length);
+		for (var i=0; i<=catlist.length-1; i++){
+			pctConfusion[i]=new Array(catlist.length);
+			nConfusion[i]=new Array(catlist.length);
+			cntConfusion[i]=new Array(catlist.length);
+			pctConfusion[i].fill(0);
+			nConfusion[i].fill(0);
+			cntConfusion[i].fill(0);
+		}
+
+		//Fill confusion matrix
+		var samplecatidx;
+		var testcatidx;
+		for (var i=0; i<=file.data[0].Sample.length-1; i++){
+			samplecatidx = catlist.indexOf(catSample[file.data[0].Sample[i]]);
+
+			for (var j=0; j<=file.data[0].Test[i].length-1; j++){
+				testcatidx = catlist.indexOf(catTest[file.data[0].Test[i][j]]);
+
+				cntConfusion[samplecatidx][testcatidx]++;
+
+				// if that test item was chosen
+				if (file.data[0].RewardStage==1 & file.data[0].Response[i] == j){
+					nConfusion[samplecatidx][testcatidx]++;
+				}
+
+				pctConfusion[samplecatidx][testcatidx]=nConfusion[samplecatidx][testcatidx]/cntConfusion[samplecatidx][testcatidx];
+			} //for j test
+		} //for i trials
+
+		for (var i=0; i<=catlist.length-1; i++){
+			for (var j=0; j<=catlist.length-1; j++){
+				dataConfusion.setValue(i,j+1,pctConfusion[i][j]);
+			} //for j test
+		} //for i sample
+	} //function toConfusionData
+
+
+	function toConfusionDataOLD(){
+
+		if(typeof file.data[0].ImageFolderSample === 'undefined'){
+			for (var i=0; i<=2499; i++){
+				catSample[i]=Math.floor(i/100);
+			}
+		}
+		else{
+			if (file.data[0].ImageFolderSample === 0){
+				for (var i=0; i<=24; i++){
+					catSample[i]=Math.floor(i/1);
+				}
+			}
+			else if (file.data[0].ImageFolderSample > 0){
+				for (var i=0; i<=2499; i++){
+					catSample[i]=Math.floor(i/100);
+				}
+			}
+		}
+
+		if(typeof file.data[0].ImageFolderTest === 'undefined'){
+			for (var i=0; i<=2499; i++){
+				catTest[i]=Math.floor(i/100);
+			}
+		}
+		else{
+			if (file.data[0].ImageFolderTest === 0){
+				for (var i=0; i<=24; i++){
+					catTest[i]=Math.floor(i/1);
+				}
+			}
+			else if (file.data[0].ImageFolderTest > 0){
+				for (var i=0; i<=2499; i++){
+					catTest[i]=Math.floor(i/100);
+				}
+			}
+		}
+
+
+		//Create bar chart groupings
+		// dataConfusion.removeRows(0,dataConfusion.getNumberOfRows());
+
+		//Initialize confusion matrix
+		var pctConfusion=new Array(catlist.length);
+		var nConfusion=new Array(catlist.length);
+		var cntConfusion=new Array(catlist.length);
+		for (var i=0; i<=catlist.length-1; i++){
+			pctConfusion[i]=new Array(catlist.length);
+			nConfusion[i]=new Array(catlist.length);
+			cntConfusion[i]=new Array(catlist.length);
+			pctConfusion[i].fill(0);
+			nConfusion[i].fill(0);
+			cntConfusion[i].fill(0);
+		}
+
+		//Fill confusion matrix
+		var samplecatidx;
+		var testcatidx;
+		for (var i=0; i<=file.data[0].Sample.length-1; i++){
+			samplecatidx = catlist.indexOf(catSample[file.data[0].Sample[i]]);
+
+			for (var j=0; j<=file.data[0].Test[i].length-1; j++){
+				testcatidx = catlist.indexOf(catTest[file.data[0].Test[i][j]]);
+
+				cntConfusion[samplecatidx][testcatidx]++;
+
+				// if that test item was chosen
+				if (file.data[0].RewardStage==1 & file.data[0].Response[i] == j){
+					nConfusion[samplecatidx][testcatidx]++;
+				}
+
+				pctConfusion[samplecatidx][testcatidx]=nConfusion[samplecatidx][testcatidx]/cntConfusion[samplecatidx][testcatidx];
+			} //for j test
+		} //for i trials
+
+		for (var i=0; i<=catlist.length-1; i++){
+			for (var j=0; j<=catlist.length-1; j++){
+				dataConfusion.setValue(i,j+1,pctConfusion[i][j]);
+			} //for j test
+		} //for i sample
+	} //function toConfusionDataOLD
+
+
+	function addVitalsText(){
+		// vitalstextobj.innerHTML = "<b>" + vitals.pctcorrect + "%</b> " + "(" + vitals.trials + "tr, " + vitals.rewardestimate + "mL, " + vitals.time + "min)<br>" + "battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)";
+		lineOptions.title = vitals.subject + ": " + vitals.pctcorrect + "% " + "(n=" + vitals.trials + ", " + vitals.rewardestimate + "mL, " + vitals.time + "min)     " + "Battery: " + vitals.batteryleft + "% (-" + vitals.batteryused + "%)";
+		titleobj.innerHTML = vitals.subject;
+	}
+
+	function addTaskText(){
+		var rewardedfor = "";
+		if (task.rewardstage == 0){
+			rewardedfor = "fixation";
+		}
+		else if (task.rewardstage == 1){
+			rewardedfor = "Match";
+		}
+
+		tasktextobj.innerHTML = "Rewarded for <b>" + rewardedfor + "</b> (" + task.rewardper1000 + "mL/1000)" + "<br>Sample var <b>" + task.varsample + "</b>, " + task.sampleon + "ms" + "<br>Delay " + task.delay + "ms" + "<br>" + task.nway + "-way" + ", " + task.nobj + "-obj";
+	}
+
+	function drawLine(){
+		// Shift view window if necessary
+		var currViewSize = lineOptions.hAxis.viewWindow.max - lineOptions.hAxis.viewWindow.min + 1;
+		var nrows = dataPerformance.getNumberOfRows();
+
+		if (nrows >= currViewSize){
+		 	lineOptions.hAxis.viewWindow.min = nrows-currViewSize;
+			lineOptions.hAxis.viewWindow.max = nrows-1;
+		}
+		else {
+		 	lineOptions.hAxis.viewWindow.min = 0;
+			lineOptions.hAxis.viewWindow.max = currViewSize -1;
+		}
+	    liveline.draw(dataPerformance,lineOptions);
+	}
+
+	function drawBar(){
+		// livebar.draw(dataConfusion,google.charts.Bar.convertOptions(barOptions));
+		livebar.draw(dataConfusion,barOptions);
+	}
+
+	function smooth(data,n){
+		var smoothed_data=[];
+		for (var i=0; i<=data.length-1; i++){
+			if (i<n-1){
+				smoothed_data[i]=data[i];
+			}
+			else{
+				var sub = data.slice(i-n+1,i+1);
+				smoothed_data[i] = sub.reduce(function(a,b){return a + b;}) / n;
+			}
+		}
+		return smoothed_data;
+	}
+
+	//Define spawn function to make generator work with Promises (from: https://gist.github.com/jakearchibald/31b89cba627924972ad6)
+	function spawn(generatorFunc) {
+	  function continuer(verb, arg) {
+	    var result;
+	    try {
+	      result = generator[verb](arg);
+	    } catch (err) {
+	      return Promise.reject(err);
+	    }
+	    if (result.done) {
+	      return result.value;
+	    } else {
+	      return Promise.resolve(result.value).then(onFulfilled, onRejected);
+	    }
+	  }
+	  var generator = generatorFunc();
+	  var onFulfilled = continuer.bind(continuer, "next");
+	  var onRejected = continuer.bind(continuer, "throw");
+	  return onFulfilled();
+	}
+</script>
+</head>
+
+
+<body>
+  <h1>liveplot</h1>
+
+ <!--Pull down menu that will hold file list-->
+  <select id="file_list"></select>
+
+	<!-- <p id="vitals_text"></p> -->
+
+ <!--Div that will hold the line chart-->
+  <div id="line_div"></div>
+
+ <!--Div that will hold the bar chart-->
+  <div id="bar_div"></div>
+
+  <p id="task_text"></p>
+
+<script type="text/javascript">
+var file={
+			dir: "MonkeyTurk/",
+			list: [],
+			name: "MonkeyTurk/data.txt",
+			data: null,
+			ver: null,
+			date: null,
+			datahasChanged: false,
+			filehasChanged: false,
+		};
+
+// var vitalstextobj = document.getElementById("vitals_text");
+var titleobj = document.getElementById("page_title");
+var menuobj = document.getElementById("file_list");
+var tasktextobj = document.getElementById("task_text");
+menuobj.addEventListener("change",filelist_listener,false);
+
+var objlabels=['wrench','rhino','leg','camel','tank','bird','shorts','elephant','house','hanger','pen','hammer','zebra','fork','guitar','bear','watch','dog','spider','truck','drawer table','calculator','gun','knife','head'];
+var objlabelsOBJ = objlabels;
+var objlabelsMURI=['bucket','cradle','dishwasher','drum','fourpostbed','fryingpan','golfcart','jeep','microphone','microwave','panpipe','parkbench','piano','plate','pooltable','stationwagon','sunglasses','umbrella','ant','cat','chameleon','chihuahua','cockroach','crockodile','eel','gilamonster','hound','lizard','mantis','mongoose','pig','platypus','spaniel','turtle','vase','bookcase','stove','glockenspiel','chiffonier','pot','gokart','hotrod','subwoofer','oven','bagpipe','flatbench','accordion','bowl','pinballmachine','taxi','goggles','awning','hornet','horse','snake','termite','gecko','cod','walkingstick','meerkat','llama','echidna'];
+
+var cat=[];
+for (var i=0; i<=2499; i++){cat[i]=Math.floor(i/100);}
+
+var catOBJ = cat;
+
+var catMURI=[];
+var perobjvec=[12,8,10,12,6,12,8,10,12,12,8,10,6,14,6,6,12,10,8,6,6,8,6,8,12,6,12,6,8,6,10,12,6,6,12,8,10,12,6,12,8,10,12,12,8,10,6,14,6,6,12,10,8,32,24,6,8,12,8,6,10,12];
+var cnt=0;
+for (var i=0; i<=perobjvec.length-1; i++){
+	for (var j=0; j<=perobjvec[i]-1; j++){
+		catMURI[cnt]=i;
+		cnt++;
+	}
+}
+
+var catSample=[];
+var catTest=[];
+
+// Generate cat list
+var catlist=[];
+for (var i=0; i<=cat.length-1; i++){
+	if (catlist.indexOf(cat[i]) == -1){
+		catlist[catlist.length]=cat[i]; //add category
+	}//if
+}//for
+var catlistOBJ = catlist;
+
+var catlistMURI=[];
+for (var i=0; i<=catMURI.length-1; i++){
+	if (catlistMURI.indexOf(catMURI[i]) == -1){
+		catlistMURI[catlistMURI.length]=catMURI[i]; //add category
+	}//if
+}//for
+
+
+
+var lineOptions={
+	smooth: 5,
+  	width: 800,
+  	height: 400,
+	hAxis: {title: 'Trial#', viewWindow: {min:0,max:100}},
+	vAxis: {title: 'Correct (%)', viewWindow: {min:0,max:1.0}},
+	title: 'Subject 1',
+	animation: {
+		duration: 1000,
+		easing: 'out',
+	},
+};
+
+var barOptions={
+	width: 800,
+	height: 400,
+	vAxis: {title: 'Fraction',viewWindow: {min:0,max:1.0}},
+	title: 'Confusions (object-level)',
+	subtitle: 'Subject 1',
+	animation: {
+		duration: 1000,
+		easing: 'out',
+	},
+};
+
+var vitals={
+	subject: null,
+	pctcorrect: 0,
+	trials: 0,
+	time: 0,
+	batteryleft: 0,
+	batteryused: 0,
+	rewardestimate: 0,
+}
+
+var task={
+	rewardstage: 0,
+	rewardper1000: 0,
+	varsample: 3,
+	sampleon: 0,
+	delay: 0,
+	nway: 0,
+	nobj: 0,
+}
+
+var dataPerformance=null;
+var dataConfusion=null;
+var liveline=null;
+var livebar=null;
+
+//Generator: live update
+spawn(function* (){
+	yield loadGoogleCharts();
+
+	// first pass: get the file list from a dropbox directory
+	yield getFileListDropbox();
+
+	// first pass: plot & get cursor
+	yield readDatafromDropbox();
+	yield initializeChartData();
+	yield toMeasures();
+
+	while (true){
+		yield checkFileStatus();
+		if (file.datahasChanged==true || file.filehasChanged==true){
+			yield readDatafromDropbox();
+			if (file.filehasChanged){
+				// yield loadGoogleCharts();
+				yield initializeChartData();
+				file.filehasChanged = false;
+			}
+			yield toMeasures();
+			file.datahasChanged = false;
+		}
+	}
+}) //spawned generator
+
+</script>
+</body>
+</html>
