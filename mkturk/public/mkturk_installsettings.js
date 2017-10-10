@@ -20,7 +20,6 @@
 
 //Liz 
 var DBX_CLIENT_ID = "7niq4ezmfinnfgy"
-//var DBX_REDIRECT_URI_ROOT = "https://dl.dropboxusercontent.com/spa/k79b8ph6lmcr30d/mkturk/public/"
 var DBX_REDIRECT_URI_ROOT = "https://elizabethyoo.github.io/mkturk/public/"
 
 
