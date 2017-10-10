@@ -32,9 +32,9 @@ var subjectlist = [
 ];
 
 // ------ Save location settings ------
-var DATA_SAVEPATH = "/MonkeyTurk/datafiles/"
-var PARAM_DIRPATH = "/MonkeyTurk/parameterfiles/subjects/"
-var SOUND_FILEPREFIX = "/MonkeyTurk/sounds/au"
+var DATA_SAVEPATH = "/mkturk_liz/datafiles/"
+var PARAM_DIRPATH = "/mkturk_liz/parameterfiles/subjects/"
+var SOUND_FILEPREFIX = "/mkturk_liz/sounds/au"
 
 // ------ Misc. -----------------------
 var ndatafiles2read=5; // todo: change to trials. and use as upper bound (stop reading once you hit the first discrepancy). maybe this is effectively synonymous with mintrials
