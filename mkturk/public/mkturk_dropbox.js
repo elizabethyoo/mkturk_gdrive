@@ -106,6 +106,8 @@ async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s)
 async function getImageListDropboxRecursive(dirpath){
 	var file_list = []
 
+	console.log(dirpath);
+
 	if(dirpath.endsWith('.png')){
 		return [dirpath]
 	}
