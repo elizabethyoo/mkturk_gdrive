@@ -50,8 +50,8 @@
 <script src="mkturk_globalvariables.js"></script>
 <script src="mkturk_eventlisteners.js" type="text/javascript"></script>
 <script src="mkturk_dropbox.js" type="text/javascript"></script>
-<script src="mkturk_imagebuffer.js" type="text/javascript"></script>
-<script src="mkturk_trialqueue.js" type="text/javascript"></script>
+<script src="mkturk_ImageBuffer.js" type="text/javascript"></script>
+<script src="mkturk_TrialQueue.js" type="text/javascript"></script>
 <script src="mkturk_screenfunctions.js"></script>
 <script src="mkturk_automator.js" type="text/javascript"></script>
 <script src="mkturk_bluetooth.js" type="text/javascript"></script>
@@ -202,7 +202,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
 			AutomatorPreBuffer['TrialQueue'][a] = new TrialQueue(samplingStrategy, automator_data[a].ImageBagsSample, automator_data[a].ImageBagsTest); 
 
-			// Populate the stage's imagebuffer with some images
+			// Populate the stage's ImageBuffer with some images
 			var num_prebuffer_trials = 5
 			await AutomatorPreBuffer['TrialQueue'][a].build(num_prebuffer_trials)
 			console.timeEnd('Stage '+a)
