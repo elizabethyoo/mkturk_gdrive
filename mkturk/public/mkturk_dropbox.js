@@ -106,16 +106,21 @@ async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s)
 async function getImageListDropboxRecursive(dirpath){
 	var file_list = []
 
-	console.log(dirpath);
 
 	if(dirpath.endsWith('.png')){
 		return [dirpath]
 	}
 
 	try{
+
 		var entries = []
+
+		console.log(dirpath);
+		//calling externally so could be problematic 
 		response = await dbx.filesListFolder({path: dirpath, 
 											  recursive: true}) 
+		console.log(response);
+
 		entries.push(... response.entries)
 
 		// Use response.has_more to propagate 
@@ -123,6 +128,8 @@ async function getImageListDropboxRecursive(dirpath){
 		var iteration_limit = 100
 		while(response.has_more == true){
 			response = await dbx.filesListFolderContinue(response.cursor)
+			console.log(response);
+			
 			entries.push(... response.entries)
 
 			num_iterations = num_iterations + 1 
