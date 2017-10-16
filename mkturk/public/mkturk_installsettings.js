@@ -20,7 +20,7 @@
 
 //Liz 
 var DBX_CLIENT_ID = "7niq4ezmfinnfgy"
-var DBX_REDIRECT_URI_ROOT = "https://elizabethyoo.gitlab.io/mkturk/public/"
+var DBX_REDIRECT_URI_ROOT = "https://elizabethyoo.gitlab.io/mkturk/mkturk/public/"
 
 
 
