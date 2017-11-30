@@ -50,6 +50,7 @@
 <script src="mkturk_globalvariables.js"></script>
 <script src="mkturk_eventlisteners.js" type="text/javascript"></script>
 <script src="mkturk_dropbox.js" type="text/javascript"></script>
+<script src="mkturk_googledrive.js" type="text/javascript"></script>
 <script src="mkturk_ImageBuffer.js" type="text/javascript"></script>
 <script src="mkturk_TrialQueue.js" type="text/javascript"></script>
 <script src="mkturk_screenfunctions.js"></script>
@@ -60,16 +61,6 @@
 <script>
 
 //================== AUTHENTICATE ==================//
-var DBX_REDIRECT_URI = DBX_REDIRECT_URI_ROOT + "mkturk.html"
-if (isAuthenticated()){
-	//Create an instance of Dropbox with the access token
-	var dbx = new Dropbox({accessToken: getAccessTokenFromUrl()})
-}
-else {
-	var dbx = new Dropbox({clientId: DBX_CLIENT_ID});
-	var dbx_authUrl = dbx.getAuthenticationUrl(DBX_REDIRECT_URI);
-	window.location.href = dbx_authUrl //send to Dropbox sign-in screen
-}
 
 // Client ID and API key from the Developer Console
 var CLIENT_ID = '112357665575-fggketfr61ossljtsasu2063ob6dsnjq.apps.googleusercontent.com';
@@ -102,13 +93,8 @@ function initClient() {
     discoveryDocs: DISCOVERY_DOCS,
     scope: SCOPES
   }).then(function () {
-    // Listen for sign-in state changes.
-    gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-
-    // Handle the initial sign-in state.
-    updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-    authorizeButton.onclick = handleAuthClick;
-    signoutButton.onclick = handleSignoutClick;
+    console.log("HALLO");
+    handleAuthClick();
   });
 }
 
@@ -204,8 +190,8 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	//================== AWAIT LOAD SUBJECT PARAMS ==================//
 	subjectdialog.showModal()
 	await subjectIDPromise()
-	ENV.ParamFileName = PARAM_DIRPATH + ENV.Subject + "_params.txt";
-	await loadParametersfromDropbox(ENV.ParamFileName)
+	ENV.ParamFileName = ENV.Subject + "_params.txt";
+	await loadParametersfromGDrive(ENV.ParamFileName)
 
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 	ble.statustext = await loadTextFilefromDropbox(ENV.ParamFileName)
@@ -600,7 +586,7 @@ while(true){
 </script>
 
  <script async defer src="https://apis.google.com/js/api.js"
-      onload="this.onload=function(){};handleClientLoad();handleAuthClick()"
+      onload="this.onload=function(){};handleClientLoad();"
       onreadystatechange="if (this.readyState === 'complete') this.onload()">
 </script>
 
