@@ -13,6 +13,7 @@ async function loadParametersfromGDrive(paramfile_path){
 		//console.log(filemeta);
 
 		data = JSON.parse(datastring)
+		console.log(data);
 
 		TASK = {}
 		TASK = data
@@ -56,11 +57,17 @@ function loadTextFilefromGDrive(textfile_path){
 	})	
 }
 
-function jsonp_callback(data) {
-	 //console.log(data);
+async function jsonp_callback(data) {
+	 var data_text = JSON.stringify(data);
+	 var data_blob = new Blob([data], {type : "text/plain"});
+	 console.log(data_blob);
 	 var reader = new FileReader();
-	 reader.onload = alert("hello");
-		reader.readAsText(data);
+	 reader.onload = function(e)  {
+	 	console.log("hello");
+	 	//print contents of blob 
+	 	console.log(JSON.stringify(reader.result));
+	 }
+		reader.readAsText(data_blob);
 
 }
 

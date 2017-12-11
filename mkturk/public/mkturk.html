@@ -192,13 +192,12 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	subjectdialog.showModal()
 	await subjectIDPromise()
 	ENV.ParamFileName = ENV.Subject + "_params.json";
-	console.log(ENV.ParamFileName);
 	await loadParametersfromGDrive(ENV.ParamFileName);
 
 	
 	
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
-	ble.statustext = await loadTextFilefromDropbox(ENV.ParamFileName)
+	ble.statustext = await loadTextFilefromGDrive(ENV.ParamFileName)
 	updateStatusText(ble.statustext)
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
 	document.querySelector("button[name=doneEditingParams]").style.display = "block"
