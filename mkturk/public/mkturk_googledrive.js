@@ -83,8 +83,6 @@ function loadTextFilefromGDrive(textfile_path){
 		  cache: false
 		});
 
-		console.log("asdfsdf");
-
 	})
 .catch(function(error){
 	console.error(error)
