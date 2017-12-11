@@ -40,7 +40,7 @@ function loadTextFilefromGDrive(textfile_path){
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
 
-		console.log(data.result.webContentLink);
+		//console.log(data.result.webContentLink);
 		$.ajax({
 		  crossDomain: true,
 		  url: data.result.webContentLink,
@@ -57,15 +57,10 @@ function loadTextFilefromGDrive(textfile_path){
 }
 
 function jsonp_callback(data) {
-	 console.log(data);
-	 var reader = new FileReader()
-			reader.onload = function(e){
-				var data = JSON.parse(reader.result);
-				console.log(data);
-				console.log("FILEREADER");
-				resolve(reader.result);
-			}
-			reader.readAsText(data.fileBlob)
+	 //console.log(data);
+	 var reader = new FileReader();
+	 reader.onload = alert("hello");
+		reader.readAsText(data);
 
 }
 
