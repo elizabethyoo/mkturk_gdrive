@@ -4,7 +4,7 @@ async function loadParametersfromGDrive(paramfile_path){
 
 
 	var response = await searchFileByName(paramfile_path);
-	var paramfile_id = response.result.files[0].id;
+	var paramfile_id = response.result.files[0].id
 
 	try{ 
 		datastring = await loadTextFilefromGDrive(paramfile_id);
@@ -29,42 +29,26 @@ async function loadParametersfromGDrive(paramfile_path){
 		return 1; //need2loadParameters
 	}
 
-		TASK = {}
-		TASK = data
-
-		ENV.ParamFileName = filemeta.path_display; 
-		ENV.ParamFileRev = filemeta.rev
-		ENV.ParamFileDate = new Date(filemeta.client_modified)
-		return 0; //need2loadParameters
-	}
-
-
-	
-	xhr.send();
-
-
-
 	}
 
 
 
-function jsonp_callback(data) {
-	console.log(data);
-}
 
 function loadTextFilefromGDrive(textfile_path){
 	console.log("textfile_id is: " + textfile_path);
 	
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
-		console.log(textfile_path);
-		console.log(data);
+		//console.log(textfile_path);
+		//console.log(data);
+
 		/*var reader = new FileReader()
 		reader.onload = function(e){
 			var data = JSON.parse(reader.result)
 			
 			resolve(reader.result)
 		}*/
+
 		console.log(data.result.webContentLink);
 		$.ajax({
 		  crossDomain: true,
@@ -72,6 +56,8 @@ function loadTextFilefromGDrive(textfile_path){
 		  dataType: 'jsonp',
 		  cache: false
 		});
+
+
 
 	})
 .catch(function(error){
@@ -82,9 +68,15 @@ function loadTextFilefromGDrive(textfile_path){
 	
 }
 
+	function jsonp_callback(data) {
+		console.log(data);
+		console.log(data.Weight);
+		console.log(data.ObjectGridIndex);
+	}
+
 
 function generate_wrapper(data) {
-	return "jsonp_callback(" + data + ")"
+	return "jsonp_callback{ " + " }";
 }
 
 //Downloads file whose fileId is provided 
