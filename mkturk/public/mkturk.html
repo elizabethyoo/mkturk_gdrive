@@ -192,6 +192,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	subjectdialog.showModal()
 	await subjectIDPromise()
 	ENV.ParamFileName = ENV.Subject + "_params.json";
+	console.log(ENV.ParamFileName);
 	await loadParametersfromGDrive(ENV.ParamFileName);
 
 	

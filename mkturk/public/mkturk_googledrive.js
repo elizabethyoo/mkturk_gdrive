@@ -2,7 +2,6 @@
 async function loadParametersfromGDrive(paramfile_path){
 	//console.log("paramfile_path is: " + paramfile_path);
 
-
 	var response = await searchFileByName(paramfile_path);
 	var paramfile_id = response.result.files[0].id
 
@@ -10,17 +9,18 @@ async function loadParametersfromGDrive(paramfile_path){
 		datastring = await loadTextFilefromGDrive(paramfile_id);
 		console.log(datastring);
 
-		filemeta =  await downloadFile();
-		console.log(filemeta);
+		//filemeta =  await downloadFile();
+		//console.log(filemeta);
 
 		data = JSON.parse(datastring)
 
 		TASK = {}
 		TASK = data
+		console.log(TASK);
 
-		ENV.ParamFileName = filemeta.path_display; 
-		ENV.ParamFileRev = filemeta.rev
-		ENV.ParamFileDate = new Date(filemeta.client_modified)
+		ENV.ParamFileName = datastring.path_display; 
+		ENV.ParamFileRev = datastring.rev;
+		ENV.ParamFileDate = new Date(datastring.client_modified);
 		return 0; //need2loadParameters
 	}
 	
@@ -39,15 +39,6 @@ function loadTextFilefromGDrive(textfile_path){
 	
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
-		//console.log(textfile_path);
-		//console.log(data);
-
-		/*var reader = new FileReader()
-		reader.onload = function(e){
-			var data = JSON.parse(reader.result)
-			
-			resolve(reader.result)
-		}*/
 
 		console.log(data.result.webContentLink);
 		$.ajax({
@@ -57,22 +48,26 @@ function loadTextFilefromGDrive(textfile_path){
 		  cache: false
 		});
 
-
-
+		
 	})
 .catch(function(error){
 	console.error(error)
 	})
-	})
-
-	
+	})	
 }
 
-	function jsonp_callback(data) {
-		console.log(data);
-		console.log(data.Weight);
-		console.log(data.ObjectGridIndex);
-	}
+function jsonp_callback(data) {
+	 console.log(data);
+	 var reader = new FileReader()
+			reader.onload = function(e){
+				var data = JSON.parse(reader.result);
+				console.log(data);
+				console.log("FILEREADER");
+				resolve(reader.result);
+			}
+			reader.readAsText(data.fileBlob)
+
+}
 
 
 function generate_wrapper(data) {
