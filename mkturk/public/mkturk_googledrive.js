@@ -61,6 +61,7 @@ async function loadParametersfromGDrive(paramfile_path){
 function jsonp_callback(data) {
 	console.log(data);
 }
+
 function loadTextFilefromGDrive(textfile_path){
 	console.log("textfile_id is: " + textfile_path);
 	
@@ -78,20 +79,11 @@ function loadTextFilefromGDrive(textfile_path){
 		$.ajax({
 		  crossDomain: true,
 		  url: data.result.webContentLink,
-		  headers: {
-		  	//'Access-Control-Allow-Credentials': true
-			'Access-Control-Allow-Origin': '*'
-			//'Access-Control-Allow-Methods': 'GET'
-			//Access-Control-Allow-Headers: Authorization
-		  },
-		  success: function(ret_data) {
-		  	console.log("Success ?");
-		  	console.log(ret_data);
-		  },
-		  error: function(ret_data) {
-		  	console.log("Failure");
-		  }
+		  dataType: 'jsonp',
+		  cache: false
 		});
+
+		console.log("asdfsdf");
 
 	})
 .catch(function(error){
@@ -100,6 +92,11 @@ function loadTextFilefromGDrive(textfile_path){
 	})
 
 	
+}
+
+
+function generate_wrapper(data) {
+	return "jsonp_callback(" + data + ")"
 }
 
 //Downloads file whose fileId is provided 
