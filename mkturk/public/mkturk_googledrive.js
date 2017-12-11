@@ -4,7 +4,7 @@ async function loadParametersfromGDrive(paramfile_path){
 
 
 	var response = await searchFileByName(paramfile_path);
-	var paramfile_id = response.result.files[0].id
+	var paramfile_id = response.result.files[0].id;
 
 	try{ 
 		datastring = await loadTextFilefromGDrive(paramfile_id);
@@ -28,16 +28,6 @@ async function loadParametersfromGDrive(paramfile_path){
 		console.error('loadParametersfromGDrive() error: ' + error)
 		return 1; //need2loadParameters
 	}
-	
-
-	//Load params file from mkturk_gitlab directory 
-	var xhr = new XMLHttpRequest();
-	
-	xhr.open("GET", "http://localhost:8000/Eliaso_params.txt");
-
-	xhr.onload = function()  {
-		var data = JSON.parse(xhr.responseText);
-		console.log(data);
 
 		TASK = {}
 		TASK = data
