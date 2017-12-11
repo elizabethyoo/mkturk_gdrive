@@ -57,25 +57,29 @@ function loadTextFilefromGDrive(textfile_path){
 	})	
 }
 
+//data is a javascript object; convert to text then blobify for compatibility with FileReader 
 async function jsonp_callback(data) {
-	 var data_text = JSON.stringify(data);
-	 var data_blob = new Blob([data], {type : "text/plain"});
+	 var data_blob = new Blob([JSON.stringify(data)], {type : "text/plain"});
 	 console.log(data_blob);
 	 var reader = new FileReader();
 	 reader.onload = function(e)  {
-	 	console.log("hello");
-	 	//print contents of blob 
-	 	console.log(JSON.stringify(reader.result));
+	 	//print contents of blob, check that file contents were successfully converted  
+	 	console.log(reader.result);
+	 	var data = JSON.parse(reader.result);
+		return(reader.result);
 	 }
 		reader.readAsText(data_blob);
-
 }
 
-
+//wraps data s.t. it can be saved in JSONP format 
 function generate_wrapper(data) {
 	return "jsonp_callback{ " + " }";
 }
 
+
+
+
+//Googledrive functions 
 //Downloads file whose fileId is provided 
 function downloadFile(fileId) {
 	console.log(fileId);
