@@ -1,6 +1,8 @@
 <!doctype html>
 
 <head>
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+
 <meta name="mobile-web-app-capable" content="yes"> <!-- full screen https://developer.chrome.com/multidevice/android/installtohomescreen -->
 <meta name="viewport" content="width=device-width, user-scalable=no"> <!-- do not allow window rescaling.  To avoid window rescaling in portrait mode, added with=device-width from http://stackoverflow.com/questions/22771523/ipad-w-retina-safari-reported-dimensions-in-landscape-make-no-sense. Also, removes 300-350ms tap delay (https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away) -->
 
@@ -93,7 +95,6 @@ function initClient() {
     discoveryDocs: DISCOVERY_DOCS,
     scope: SCOPES
   }).then(function () {
-    console.log("HALLO");
     handleAuthClick();
   });
 }
@@ -190,9 +191,11 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	//================== AWAIT LOAD SUBJECT PARAMS ==================//
 	subjectdialog.showModal()
 	await subjectIDPromise()
-	ENV.ParamFileName = ENV.Subject + "_params.txt";
-	await loadParametersfromGDrive(ENV.ParamFileName)
+	ENV.ParamFileName = ENV.Subject + "_params.json";
+	await loadParametersfromGDrive(ENV.ParamFileName);
 
+	
+	
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 	ble.statustext = await loadTextFilefromDropbox(ENV.ParamFileName)
 	updateStatusText(ble.statustext)
@@ -213,7 +216,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		await loadParametersfromDropbox(ENV.ParamFileName) //then read them
 	}
 	ble.statustext=""
-
+	
 	//============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
 	// Read performance history
 	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/'
