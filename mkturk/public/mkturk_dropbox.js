@@ -192,6 +192,7 @@ async function loadParametersfromDropbox(paramfile_path){
 
 		TASK = {}
 		TASK = data
+		console.log("LOAD PARAMETERS");
 
 		ENV.ParamFileName = filemeta.path_display; 
 		ENV.ParamFileRev = filemeta.rev

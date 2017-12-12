@@ -64,7 +64,7 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 
 function loadTextFilefromGDrive(textfile_path){
 	console.log("textfile_id is: " + textfile_path);
-	
+
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
 
@@ -73,33 +73,44 @@ function loadTextFilefromGDrive(textfile_path){
 		  crossDomain: true,
 		  url: data.result.webContentLink,
 		  dataType: 'jsonp',
-		  cache: false
+		  cache: false,
+		  success: jsonp_callback(data)  {
+		  	var data_blob = new Blob([JSON.stringify(data)], {type : "text/plain"});
+		 var reader = new FileReader();
+		 reader.onload = function(e)  {
+		 	//print contents of blob, check that file contents were successfully converted  
+		 	//console.log(reader.result);
+		 	var data = JSON.parse(reader.result);
+		 	return data;
+			
+		 }
+			reader.readAsText(data_blob);
+			  }
 		});
-
-		
-	})
-.catch(function(error){
+	}).catch(function(error){
 	console.error(error)
-	})
+		})
 	})	
+
+	
 }
-
-
 //121717 TO DO: understand JSON methods e.g. parse and figure out how to display the contents of params file onto webapp 
 
 //data is a javascript object; convert to text then blobify for compatibility with FileReader 
-async function jsonp_callback(data) {
+/*
+function jsonp_callback(data) {
 	 var data_blob = new Blob([JSON.stringify(data)], {type : "text/plain"});
-	 console.log(data_blob);
 	 var reader = new FileReader();
 	 reader.onload = function(e)  {
 	 	//print contents of blob, check that file contents were successfully converted  
-	 	console.log(reader.result);
+	 	//console.log(reader.result);
 	 	var data = JSON.parse(reader.result);
-		return reader.result;
+	 	return data;
+		
 	 }
 		reader.readAsText(data_blob);
 }
+*/
 
 //wraps data s.t. it can be saved in JSONP format 
 function generate_wrapper(data) {
