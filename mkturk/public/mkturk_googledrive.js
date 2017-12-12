@@ -32,6 +32,33 @@ async function loadParametersfromGDrive(paramfile_path){
 
 	}
 
+async function parseAutomatorFilefromGDrive(jsontxt_filepath){
+	// From a JSON.txt of the format: 
+	// [{param:val, param:val}, {param:val, param:val}]
+
+	// Returns an array of identical format
+	console.log("parseAutomatorFilefromGDrive is running");
+	console.log(jsontxt_filepath); 
+
+	var datastring = await loadTextFilefromGDrive(jsontxt_filepath)
+
+	data = JSON.parse(datastring);
+	return data
+
+	// Not being used, but maybe if you want to iterate over individual parameters
+	// e.g. to check that certain parameters are present; and to set defaults otherwise 
+	// e.g. to ensure consistency between fieldnames and TRIAL.[stuff]
+	automator_stage_parameters = []
+	for (var i = 0; i<data.length; i++){
+		automator_stage_parameters[i] = []
+		for (var property in data[i]){
+			if (data[i].hasOwnProperty(property)){ // Apparently necessary as explained in: http://stackoverflow.com/questions/8312459/iterate-through-object-properties
+				automator_stage_parameters[i][property] = data[i][property]
+			}	
+		}
+	}
+	return automator_stage_parameters
+}
 
 
 
@@ -57,6 +84,9 @@ function loadTextFilefromGDrive(textfile_path){
 	})	
 }
 
+
+//121717 TO DO: understand JSON methods e.g. parse and figure out how to display the contents of params file onto webapp 
+
 //data is a javascript object; convert to text then blobify for compatibility with FileReader 
 async function jsonp_callback(data) {
 	 var data_blob = new Blob([JSON.stringify(data)], {type : "text/plain"});
@@ -66,7 +96,7 @@ async function jsonp_callback(data) {
 	 	//print contents of blob, check that file contents were successfully converted  
 	 	console.log(reader.result);
 	 	var data = JSON.parse(reader.result);
-		return(reader.result);
+		return reader.result;
 	 }
 		reader.readAsText(data_blob);
 }
