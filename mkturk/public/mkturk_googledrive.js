@@ -63,7 +63,7 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 
 
 function loadTextFilefromGDrive(textfile_path){
-	console.log("textfile_id is: " + textfile_path);
+	//console.log("textfile_id is: " + textfile_path);
 
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
@@ -73,19 +73,7 @@ function loadTextFilefromGDrive(textfile_path){
 		  crossDomain: true,
 		  url: data.result.webContentLink,
 		  dataType: 'jsonp',
-		  cache: false,
-		  success: jsonp_callback(data)  {
-		  	var data_blob = new Blob([JSON.stringify(data)], {type : "text/plain"});
-		 var reader = new FileReader();
-		 reader.onload = function(e)  {
-		 	//print contents of blob, check that file contents were successfully converted  
-		 	//console.log(reader.result);
-		 	var data = JSON.parse(reader.result);
-		 	return data;
-			
-		 }
-			reader.readAsText(data_blob);
-			  }
+		  cache: false
 		});
 	}).catch(function(error){
 	console.error(error)
@@ -94,23 +82,19 @@ function loadTextFilefromGDrive(textfile_path){
 
 	
 }
-//121717 TO DO: understand JSON methods e.g. parse and figure out how to display the contents of params file onto webapp 
 
 //data is a javascript object; convert to text then blobify for compatibility with FileReader 
-/*
 function jsonp_callback(data) {
 	 var data_blob = new Blob([JSON.stringify(data)], {type : "text/plain"});
 	 var reader = new FileReader();
 	 reader.onload = function(e)  {
 	 	//print contents of blob, check that file contents were successfully converted  
-	 	//console.log(reader.result);
+	 	console.log(reader.result);
 	 	var data = JSON.parse(reader.result);
-	 	return data;
-		
+	 	return data;	
 	 }
-		reader.readAsText(data_blob);
+	reader.readAsText(data_blob);
 }
-*/
 
 //wraps data s.t. it can be saved in JSONP format 
 function generate_wrapper(data) {
@@ -123,7 +107,7 @@ function generate_wrapper(data) {
 //Googledrive functions 
 //Downloads file whose fileId is provided 
 function downloadFile(fileId) {
-	console.log(fileId);
+	//console.log(fileId);
     return gapi.client.drive.files.get({
       "fileId": fileId,
       "fields": "*"
@@ -146,7 +130,7 @@ function searchFileByName(name) {
 	
     	.then(function(response) {
       	// Handle the results here (response.result has the parsed body).
-      	console.log("Response", response);
+      	//console.log("Response", response);
       	return response
     	}, function(error) {
       	console.error("Execute error", error);
