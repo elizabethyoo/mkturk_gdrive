@@ -27,7 +27,7 @@
 
 	<p id="imageloadingtext" style="z-index:100; position: absolute; left: 1px; top: 1px; height: 5%; width: 100%; font-size: 16px; color: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;  word-break: break-all;"></p>
 
-	<button name="doneEditingParams" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 75px; width: 100px; border-radius: 20px">Done editing params</button>
+	<button id="doneEditingParams" name="doneEditingParams" style="visibility:hidden; position: absolute; top: 45%; left: 70%; height: 75px; width: 100px; border-radius: 20px">Done editing params</button>
 
 	<button name="doneTestingTask" style="visibility:hidden; position: absolute; top: 55%; left: 70%; height: 75px; width: 200px; border-radius: 20px; z-index:101">Done with testing trials</button>
 
@@ -117,6 +117,8 @@ function handleSignoutClick(event) {
 
 
 // GET PARAMFILE NAME
+console.log("Log 1");
+
 var subjectdialog = document.getElementById("subjectID_dialog");
 var subjectlistobj = document.getElementById("subjectID_list");
 for (var i=subjectlist.length-1; i>=0; i--){
@@ -197,16 +199,23 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	
 	
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
-	ble.statustext = await loadTextFilefromGDrive(ENV.ParamFileName)
-	//Q: Is this the part where subject params are displayed to user? 
-	updateStatusText(ble.statustext)
-	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
-	document.querySelector("button[name=doneEditingParams]").style.display = "block"
-	document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
 	
+	await loadTextFilefromGDrive(ENV.ParamFileName)
+	console.log("Log3");
+	//console.log(ble.statustext);
+	//Q: Is this the part where subject params are displayed to user? 
+	//updateStatusText(ble.statustext)
+	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
+	///document.querySelector("button[name=doneEditingParams]").style.display = "block"
+	document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
+
+	var paramsButton = document.getElementById("doneEditingParams");
 	await editParamsPromise()
 	document.querySelector("button[name=doneEditingParams]").style.display = "none"
 	var textobj = document.getElementById("headsuptext")
+
+
+
 	textobj.removeEventListener('touchend',headsuptext_listener)
 	textobj.removeEventListener('mouseup',headsuptext_listener)
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)

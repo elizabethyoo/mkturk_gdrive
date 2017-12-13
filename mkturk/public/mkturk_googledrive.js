@@ -32,6 +32,7 @@ async function loadParametersfromGDrive(paramfile_path){
 
 	}
 
+/*
 async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 	// From a JSON.txt of the format: 
 	// [{param:val, param:val}, {param:val, param:val}]
@@ -59,7 +60,7 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 	}
 	return automator_stage_parameters
 }
-
+*/
 
 
 function loadTextFilefromGDrive(textfile_path){
@@ -76,10 +77,9 @@ function loadTextFilefromGDrive(textfile_path){
 		  cache: false
 		});
 	}).catch(function(error){
-	console.error(error)
+	console.error(error);
 		})
-	})	
-
+	})
 	
 }
 
@@ -89,9 +89,14 @@ function jsonp_callback(data) {
 	 var reader = new FileReader();
 	 reader.onload = function(e)  {
 	 	//print contents of blob, check that file contents were successfully converted  
-	 	console.log(reader.result);
+	 	var content = reader.result
 	 	var data = JSON.parse(reader.result);
-	 	return data;	
+	 	//console.log(data);
+	 	updateStatusText(content);
+		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true);
+		///document.querySelector("button[name=doneEditingParams]").style.display = "block"
+		document.querySelector("button[name=doneEditingParams]").style.visibility = "visible";
+		
 	 }
 	reader.readAsText(data_blob);
 }
