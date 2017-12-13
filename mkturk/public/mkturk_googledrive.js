@@ -61,7 +61,7 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 	return automator_stage_parameters
 }
 */
-
+var paramsData = null; 
 
 function loadTextFilefromGDrive(textfile_path){
 	//console.log("textfile_id is: " + textfile_path);
@@ -80,7 +80,7 @@ function loadTextFilefromGDrive(textfile_path){
 	console.error(error);
 		})
 	})
-	
+	resolve(paramsData);	
 }
 
 //data is a javascript object; convert to text then blobify for compatibility with FileReader 
@@ -89,16 +89,12 @@ function jsonp_callback(data) {
 	 var reader = new FileReader();
 	 reader.onload = function(e)  {
 	 	//print contents of blob, check that file contents were successfully converted  
-	 	var content = reader.result
-	 	var data = JSON.parse(reader.result);
-	 	//console.log(data);
-	 	updateStatusText(content);
-		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true);
-		///document.querySelector("button[name=doneEditingParams]").style.display = "block"
-		document.querySelector("button[name=doneEditingParams]").style.visibility = "visible";
-		
+	 	var content = reader.result;
+	 	paramsData = content; 
+
 	 }
 	reader.readAsText(data_blob);
+	endOfCallback();
 }
 
 //wraps data s.t. it can be saved in JSONP format 

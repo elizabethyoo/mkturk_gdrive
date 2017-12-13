@@ -201,8 +201,8 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 	
 	await loadTextFilefromGDrive(ENV.ParamFileName)
-	console.log("Log3");
-	//console.log(ble.statustext);
+	function endOfCallBack() {
+		//console.log(ble.statustext);
 	//Q: Is this the part where subject params are displayed to user? 
 	//updateStatusText(ble.statustext)
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
@@ -596,6 +596,10 @@ while(true){
 }
 })();
 
+
+
+	}
+	
 </script>
 
  <script async defer src="https://apis.google.com/js/api.js"

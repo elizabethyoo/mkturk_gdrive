@@ -234,8 +234,7 @@ async function parseAutomatorFilefromDropbox(jsontxt_filepath){
 function loadTextFilefromDropbox(textfile_path){
 	return new Promise(function(resolve,reject){
 		dbx.filesDownload({path: textfile_path}).then(function(data){
-			//console.log("Read textfile "+textfile_path+" of size " + data.size)
-
+			console.log("Read textfile "+textfile_path+" of size " + data.size)
 			var reader = new FileReader()
 			reader.onload = function(e){
 				var data = JSON.parse(reader.result)
