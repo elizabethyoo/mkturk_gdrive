@@ -7,18 +7,11 @@ async function loadParametersfromGDrive(paramfile_path){
 
 	try{ 
 		datastring = await loadTextFilefromGDrive(paramfile_id);
-		console.log(datastring);
-
-		//filemeta =  await downloadFile();
-		//console.log(filemeta);
-
 		data = JSON.parse(datastring)
-		console.log(data);
 
 		TASK = {}
 		TASK = data
 		console.log(TASK);
-
 		ENV.ParamFileName = datastring.path_display; 
 		ENV.ParamFileRev = datastring.rev;
 		ENV.ParamFileDate = new Date(datastring.client_modified);
@@ -30,9 +23,9 @@ async function loadParametersfromGDrive(paramfile_path){
 		return 1; //need2loadParameters
 	}
 
-	}
+}
 
-/*
+
 async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 	// From a JSON.txt of the format: 
 	// [{param:val, param:val}, {param:val, param:val}]
@@ -60,7 +53,7 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 	}
 	return automator_stage_parameters
 }
-*/
+
 var paramsData = null; 
 
 function loadTextFilefromGDrive(textfile_path){
@@ -69,13 +62,15 @@ function loadTextFilefromGDrive(textfile_path){
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
 
-		//console.log(data.result.webContentLink);
 		$.ajax({
 		  crossDomain: true,
 		  url: data.result.webContentLink,
 		  dataType: 'jsonp',
 		  cache: false
 		});
+
+		resolve(0);
+		
 	}).catch(function(error){
 	console.error(error);
 		})
@@ -89,12 +84,18 @@ function jsonp_callback(data) {
 	 var reader = new FileReader();
 	 reader.onload = function(e)  {
 	 	//print contents of blob, check that file contents were successfully converted  
-	 	var content = reader.result;
-	 	paramsData = content; 
+	 	var content = reader.result
+	 	var data = JSON.parse(reader.result);
+	 	//console.log(data);
+	 	updateStatusText(content);
+		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true);
+		document.querySelector("button[name=doneEditingParams]").style.display = "block"
+		document.querySelector("button[name=doneEditingParams]").style.visibility = "visible";
 
+		console.log(data);
 	 }
 	reader.readAsText(data_blob);
-	endOfCallback();
+
 }
 
 //wraps data s.t. it can be saved in JSONP format 

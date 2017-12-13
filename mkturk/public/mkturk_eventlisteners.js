@@ -207,7 +207,7 @@ function subjectIDPromise(){
 }
 
 // Promise: Edit Parameters Text
-function editParamsPromise(){
+async function editParamsPromise(){
 	var resolveFunc
 	var errFunc
 	p = new Promise(function(resolve,reject){
@@ -220,6 +220,7 @@ function editParamsPromise(){
 		var imclicked =[-1];
 		while (true){
 			imclicked = yield imclicked;
+			console.log(imclicked);
 			resolveFunc(imclicked);
 		}
 	}

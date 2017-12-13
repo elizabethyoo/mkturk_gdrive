@@ -116,9 +116,6 @@ function handleSignoutClick(event) {
 //=============== (end) AUTHENTICATE ===============//
 
 
-// GET PARAMFILE NAME
-console.log("Log 1");
-
 var subjectdialog = document.getElementById("subjectID_dialog");
 var subjectlistobj = document.getElementById("subjectID_list");
 for (var i=subjectlist.length-1; i>=0; i--){
@@ -200,17 +197,16 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
 	
-	await loadTextFilefromGDrive(ENV.ParamFileName)
-	function endOfCallBack() {
-		//console.log(ble.statustext);
+	//console.log(ble.statustext);
 	//Q: Is this the part where subject params are displayed to user? 
 	//updateStatusText(ble.statustext)
-	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
+	//document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true)
 	///document.querySelector("button[name=doneEditingParams]").style.display = "block"
-	document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
+	//document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
 
-	var paramsButton = document.getElementById("doneEditingParams");
 	await editParamsPromise()
+	var paramsButton = document.getElementById("doneEditingParams");
+
 	document.querySelector("button[name=doneEditingParams]").style.display = "none"
 	var textobj = document.getElementById("headsuptext")
 
@@ -596,9 +592,6 @@ while(true){
 }
 })();
 
-
-
-	}
 	
 </script>
 
