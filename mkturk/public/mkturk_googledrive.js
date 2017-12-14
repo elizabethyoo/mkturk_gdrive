@@ -1,3 +1,36 @@
+
+//================== LIST FILES ==================//
+// Asynchronous: Get file list from dropbox directory
+async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subject_id, save_directory){
+	var file_list = []
+	try{
+
+		// TODO: add code for reading huge folders -- (see getImageListDropboxRecursive)
+		response = await dbx.filesListFolder({path: save_directory})
+		//console.log("Success: read directory "+save_directory)
+
+		var q2=0;
+		for (var q = 0; q <= response.entries.length-1; q++){
+			if (response.entries[q][".tag"] == "file" && response.entries[q].name.indexOf(subject_id) != -1){
+				file_list[q2] = response.entries[q].path_display
+				q2++;
+			}
+		}
+
+		// [oldest,...,most recent]
+		file_list.sort();
+
+		// Return most recent files 
+		num_files = file_list.length
+		return file_list.slice(num_files - num_files_to_get, num_files)
+	}
+	catch (error) {
+		console.error(error)
+	}
+
+}
+
+
 //================== LOAD JSON ==================//
 async function loadParametersfromGDrive(paramfile_path){
 	//console.log("paramfile_path is: " + paramfile_path);
