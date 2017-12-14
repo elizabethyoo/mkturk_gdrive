@@ -9,9 +9,10 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 		console.log(folderId);
 		//TO DO: method for converting folder path to folder ID 
 
-		response = await retrieveAllFilesinFolder(folderId);
+		//response = await retrieveAllFilesinFolder(folderId);
 		//console.log("Success: read directory "+save_directory)
 
+		/*
 		var q2=0;
 		for (var q = 0; q <= response.entries.length-1; q++){
 			if (response.entries[q][".tag"] == "file" && response.entries[q].name.indexOf(subject_id) != -1){
@@ -26,6 +27,8 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 		// Return most recent files 
 		num_files = file_list.length
 		return file_list.slice(num_files - num_files_to_get, num_files)
+		*/
+
 	}
 	catch (error) {
 		console.error(error)
@@ -74,14 +77,14 @@ async function loadParametersfromGDrive(paramfile_path){
 	//console.log("paramfile_path is: " + paramfile_path);
 
 	var response = await searchFileByName(paramfile_path);
-	var paramfile_id = response.result.files[0].id
+	var paramfile_id = response.result.files[0].id;
 
 	try{ 
 		datastring = await loadTextFilefromGDrive(paramfile_id);
-		data = JSON.parse(datastring)
+		data = JSON.parse(datastring);
 
-		TASK = {}
-		TASK = data
+		TASK = {};
+		TASK = data;
 		console.log(TASK);
 		ENV.ParamFileName = datastring.path_display; 
 		ENV.ParamFileRev = datastring.rev;
@@ -90,13 +93,13 @@ async function loadParametersfromGDrive(paramfile_path){
 	}
 	
 	catch(error){
-		console.error('loadParametersfromGDrive() error: ' + error)
+		console.error('loadParametersfromGDrive() error: ' + error);
 		return 1; //need2loadParameters
 	}
 
 }
 
-
+/*
 async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 	// From a JSON.txt of the format: 
 	// [{param:val, param:val}, {param:val, param:val}]
@@ -124,7 +127,9 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 	}
 	return automator_stage_parameters
 }
+*/
 
+//Global variable paramsData
 var paramsData = null; 
 
 function loadTextFilefromGDrive(textfile_path){
@@ -217,8 +222,10 @@ function searchFolderByName(name) {
       "q": "mimeType = 'application/vnd.google-apps.folder' and name = '" + name + "'"
     })
         .then(function(response) {
-          // Handle the results here (response.result has the parsed body).
+          // Handle the results here (response.result has the parsed body)
           console.log("Response", response);
+          console.log(response.result);
+          console.log(response.result.files[0].id);
         }, function(error) {
           console.error("Execute error", error);
         });
@@ -226,13 +233,41 @@ function searchFolderByName(name) {
 
 //Takes a folder path and returns the corresponding folder's folder ID
 function pathToId(path)  {
-	var folderName = path.split("/").pop();
-	var folderList = searchFolderByName(folderName);
-	var folder_id = response.result.files[0].id;
-	console.log(folder_id);
+	var components = path.split("/");
+	var folderName = components[components.length-2];
+	var response = searchFolderByName(folderName);
+	console.log(response.result.files[0]);	
+	return 0;
 }
-//Returns all files in a given folder 
 
+/**
+ * Retrieve a list of files belonging to a folder.
+ *
+ * @param {String} folderId ID of the folder to retrieve files from.
+ * @param {Function} callback Function to call when the request is complete.
+ *
+ */
+function retrieveAllFilesInFolder(folderId, callback) {
+  var retrievePageOfChildren = function(request, result) {
+    request.execute(function(resp) {
+      result = result.concat(resp.items);
+      var nextPageToken = resp.nextPageToken;
+      if (nextPageToken) {
+        request = gapi.client.drive.children.list({
+          'folderId' : folderId,
+          'pageToken': nextPageToken
+        });
+        retrievePageOfChildren(request, result);
+      } else {
+        callback(result);
+      }
+    });
+  }
+  var initialRequest = gapi.client.drive.children.list({
+      'folderId' : folderId
+    });
+  retrievePageOfChildren(initialRequest, []);
+}
 
 
 
