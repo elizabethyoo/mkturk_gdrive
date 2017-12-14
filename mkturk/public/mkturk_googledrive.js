@@ -8,7 +8,7 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 		response = await dbx.filesListFolder({path: save_directory})
 		//TO DO: method for converting folder path to folder ID 
 
-		response = await retrieveAllFilesinFolder();
+		response = await retrieveAllFilesinFolder(folderId);
 		//console.log("Success: read directory "+save_directory)
 
 		var q2=0;
@@ -30,6 +30,12 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 		console.error(error)
 	}
 
+}
+
+//Return the ID of a folder given its path
+function convertPathToId(path)  {
+
+	return 0;
 }
 
 /**
@@ -204,6 +210,9 @@ function searchFileByName(name) {
    
 }
 
+//Searches Drive by folder path, returns a list of folders
+
+//Returns all files in a given folder 
 
 
 
