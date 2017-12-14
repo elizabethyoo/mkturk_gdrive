@@ -5,8 +5,8 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 	var file_list = []
 	try{
 
-		var folderID = pathToId(save_directory);
-		console.log(save_directory);
+		var folderId = pathToId(save_directory);
+		console.log(folderId);
 		//TO DO: method for converting folder path to folder ID 
 
 		response = await retrieveAllFilesinFolder(folderId);
@@ -195,7 +195,7 @@ function downloadFile(fileId) {
         }
 */
 
-//Searches Drive by file name, returns a list of matches 
+//Searches Drive by file name, returns a list of matching files  
 function searchFileByName(name) {
 	return gapi.client.drive.files.list({
   		"q": "name contains '" + name + "'"
@@ -211,9 +211,25 @@ function searchFileByName(name) {
    
 }
 
-//Searches Drive by folder path, returns a list of folders
+//Searches Drive by folder name, returns a list of matchigng folders  
+function searchFolderByName(name) {
+    return gapi.client.drive.files.list({
+      "q": "mimeType = 'application/vnd.google-apps.folder' and name = '" + name + "'"
+    })
+        .then(function(response) {
+          // Handle the results here (response.result has the parsed body).
+          console.log("Response", response);
+        }, function(error) {
+          console.error("Execute error", error);
+        });
+  }
+
+//Takes a folder path and returns the corresponding folder's folder ID
 function pathToId(path)  {
-	return path.split("/").pop();
+	var folderName = path.split("/").pop();
+	var folderList = searchFolderByName(folderName);
+	var folder_id = response.result.files[0].id;
+	console.log(folder_id);
 }
 //Returns all files in a given folder 
 
