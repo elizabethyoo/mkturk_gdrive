@@ -1,12 +1,14 @@
 
 //================== LIST FILES ==================//
-// Asynchronous: Get file list from dropbox directory
+// Asynchronous: Get file list from Google Drive directory
 async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subject_id, save_directory){
 	var file_list = []
 	try{
 
-		// TODO: add code for reading huge folders -- (see getImageListDropboxRecursive)
 		response = await dbx.filesListFolder({path: save_directory})
+		//TO DO: method for converting folder path to folder ID 
+
+		response = await retrieveAllFilesinFolder();
 		//console.log("Success: read directory "+save_directory)
 
 		var q2=0;
@@ -28,6 +30,35 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 		console.error(error)
 	}
 
+}
+
+/**
+ * Retrieve a list of files belonging to a folder.
+ *
+ * @param {String} folderId ID of the folder to retrieve files from.
+ * @param {Function} callback Function to call when the request is complete.
+ *
+ */
+function retrieveAllFilesInFolder(folderId, callback) {
+  var retrievePageOfChildren = function(request, result) {
+    request.execute(function(resp) {
+      result = result.concat(resp.items);
+      var nextPageToken = resp.nextPageToken;
+      if (nextPageToken) {
+        request = gapi.client.drive.children.list({
+          'folderId' : folderId,
+          'pageToken': nextPageToken
+        });
+        retrievePageOfChildren(request, result);
+      } else {
+        callback(result);
+      }
+    });
+  }
+  var initialRequest = gapi.client.drive.children.list({
+      'folderId' : folderId
+    });
+  retrievePageOfChildren(initialRequest, []);
 }
 
 
