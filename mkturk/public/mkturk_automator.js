@@ -153,8 +153,10 @@ async function readTrialHistoryFromGDrive(filepaths){
 	for (var i = 0; i< filepaths.length; i++){
 		datastring = await loadTextFilefromGDrive(filepaths[i])
 		console.log(datastring);
-		data = JSON.parse(datastring)
-		console.log(data);
+		//data = JSON.parse(datastring)
+		//console.log(data);
+
+
 		task_data = data[2]
 		trial_data = data[3]
 

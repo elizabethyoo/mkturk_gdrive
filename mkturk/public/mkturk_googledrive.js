@@ -78,10 +78,10 @@ async function loadParametersfromGDrive(paramfile_path){
 
 	try{ 
 		datastring = await loadTextFilefromGDrive(paramfile_id);
-		data = JSON.parse(datastring);
+		//data = JSON.parse(datastring);
 
 		TASK = {};
-		TASK = data;
+		TASK = datastring;
 		console.log(TASK);
 		ENV.ParamFileName = datastring.path_display; 
 		ENV.ParamFileRev = datastring.rev;
@@ -143,7 +143,7 @@ function loadTextFilefromGDrive(textfile_path){
 		  cache: false
 		});
 
-		resolve(0);
+		resolve(data);
 		
 	}).catch(function(error){
 	console.error(error);
