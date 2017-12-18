@@ -137,12 +137,12 @@ async function readTrialHistoryFromGDrive(filepaths){
 	trialhistory.response = []
 	trialhistory.correct = []
 
-	/*
+	
 	if (typeof filepaths == "string"){
 		
 		filepaths = [filepaths]
 	}
-	*/
+	
 
 	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
@@ -156,9 +156,15 @@ async function readTrialHistoryFromGDrive(filepaths){
 		//data = JSON.parse(datastring)
 		//console.log(data);
 
+		console.log("dis is iterating mew: " + i);
+		
+		task_data = datastring[2];
+		trial_data = datastring[3];
 
-		task_data = data[2]
-		trial_data = data[3]
+		console.log(task_data);
+		console.log(trial_data);
+
+		
 
 		var numTRIALs = trial_data.Response.length; 
 		// Iterate over TRIALs
@@ -174,6 +180,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 			// Start time (fixation dot appears) of trial 
 			var starttime = trial_data.StartTime[i_trial]
 			trialhistory.starttime.push(starttime)
+			
 		}
 	}
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
