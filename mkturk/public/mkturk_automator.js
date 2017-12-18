@@ -146,13 +146,15 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
-	console.log(filepaths.sort()0
-
+	filepaths.sort();
+	
 
 	// Iterate over files and add relevant variables
 	for (var i = 0; i< filepaths.length; i++){
-		datastring = await loadTextFilefromDropbox(filepaths[i])
+		datastring = await loadTextFilefromGDrive(filepaths[i])
+		console.log(datastring);
 		data = JSON.parse(datastring)
+		console.log(data);
 		task_data = data[2]
 		trial_data = data[3]
 

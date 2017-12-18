@@ -13,18 +13,22 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 		console.log(folderId);
 
 		response = await retrieveAllFilesInFolder(folderId);
-		console.log("Success: read directory "+save_directory)
+		console.log("Success: read directory "+ save_directory);
 		console.log(response);
 
+		//TO DO 1: response needs to be sorted before file ids are extracted 
 		
 		var q2=0;
 		for (var q = 0; q <= response.result.files.length-1; q++){
-			file_list[q2] = response.result.files[q];
+			file_list[q2] = response.result.files[q].id;
 			q2++;
 		}
 
+		console.log(file_list);
+
+		//TO DO 2: replace, see TO DO 1. 
 		// [oldest,...,most recent]
-		console.log(file_list.sort());
+		file_list.sort();
 
 
 		// Return most recent files 
@@ -127,6 +131,7 @@ var paramsData = null;
 
 function loadTextFilefromGDrive(textfile_path){
 	//console.log("textfile_id is: " + textfile_path);
+	console.log(textfile_path);
 
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
