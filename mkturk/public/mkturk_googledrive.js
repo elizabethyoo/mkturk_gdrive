@@ -5,29 +5,32 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 	var file_list = []
 	try{
 
-		var folderId = pathToId(save_directory);
-		console.log(folderId);
+		console.log("is dis running");
+		var folderId = await pathToId(save_directory);
+		//console.log(folderId);
 		//TO DO: method for converting folder path to folder ID 
 
-		//response = await retrieveAllFilesinFolder(folderId);
-		//console.log("Success: read directory "+save_directory)
+		console.log(folderId);
 
-		/*
+		response = await retrieveAllFilesInFolder(folderId);
+		console.log("Success: read directory "+save_directory)
+		console.log(response);
+
+		
 		var q2=0;
-		for (var q = 0; q <= response.entries.length-1; q++){
-			if (response.entries[q][".tag"] == "file" && response.entries[q].name.indexOf(subject_id) != -1){
-				file_list[q2] = response.entries[q].path_display
-				q2++;
-			}
+		for (var q = 0; q <= response.result.files.length-1; q++){
+			file_list[q2] = response.result.files[q];
+			q2++;
 		}
 
 		// [oldest,...,most recent]
-		file_list.sort();
+		console.log(file_list.sort());
+
 
 		// Return most recent files 
 		num_files = file_list.length
 		return file_list.slice(num_files - num_files_to_get, num_files)
-		*/
+		
 
 	}
 	catch (error) {
@@ -50,25 +53,15 @@ function convertPathToId(path)  {
  *
  */
 function retrieveAllFilesInFolder(folderId, callback) {
-  var retrievePageOfChildren = function(request, result) {
-    request.execute(function(resp) {
-      result = result.concat(resp.items);
-      var nextPageToken = resp.nextPageToken;
-      if (nextPageToken) {
-        request = gapi.client.drive.children.list({
-          'folderId' : folderId,
-          'pageToken': nextPageToken
-        });
-        retrievePageOfChildren(request, result);
-      } else {
-        callback(result);
-      }
+  return gapi.client.drive.files.list({
+        'q' : "parents in '" + folderId + "'",
+    }).then(function(response) {
+      	// Handle the results here (response.result has the parsed body).
+      	//console.log("Response", response);
+      	return response
+    	}, function(error) {
+      	console.error("Execute error", error);
     });
-  }
-  var initialRequest = gapi.client.drive.children.list({
-      'folderId' : folderId
-    });
-  retrievePageOfChildren(initialRequest, []);
 }
 
 
@@ -223,21 +216,26 @@ function searchFolderByName(name) {
     })
         .then(function(response) {
           // Handle the results here (response.result has the parsed body)
-          console.log("Response", response);
-          console.log(response.result);
-          console.log(response.result.files[0].id);
+        
+          return response;
+       
         }, function(error) {
           console.error("Execute error", error);
         });
   }
 
+
 //Takes a folder path and returns the corresponding folder's folder ID
-function pathToId(path)  {
+async function pathToId(path)  {
 	var components = path.split("/");
 	var folderName = components[components.length-2];
-	var response = searchFolderByName(folderName);
-	console.log(response.result.files[0]);	
-	return 0;
+	console.log(folderName);
+	var folderList = await searchFolderByName(folderName);
+	//folderList.result.file[0].id; 
+
+	console.log(folderList);
+	
+	return folderList.result.files[0].id;
 }
 
 /**
@@ -247,6 +245,7 @@ function pathToId(path)  {
  * @param {Function} callback Function to call when the request is complete.
  *
  */
+ /*
 function retrieveAllFilesInFolder(folderId, callback) {
   var retrievePageOfChildren = function(request, result) {
     request.execute(function(resp) {
@@ -268,6 +267,7 @@ function retrieveAllFilesInFolder(folderId, callback) {
     });
   retrievePageOfChildren(initialRequest, []);
 }
+*/
 
 
 

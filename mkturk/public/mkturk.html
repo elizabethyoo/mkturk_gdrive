@@ -226,8 +226,10 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	//============= AWAIT READ SUBJECT PERFORMANCE HISTORY =============//
 	// Read performance history
 	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/'
+	console.log(subject_behavior_save_directory);
 	if (TASK.Automator != 0){
-		var history_file_paths = await getMostRecentBehavioralFilePathsFromDropbox(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
+		var history_file_paths = await getMostRecentBehavioralFilePathsFromGDrive(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
+		console.log(history_file_paths)
 		trialhistory = await readTrialHistoryFromDropbox(history_file_paths);		
 	}
 
