@@ -129,7 +129,7 @@ function stageHash(task){
 }
 
 
-async function readTrialHistoryFromDropbox(filepaths){
+async function readTrialHistoryFromGDrive(filepaths){
 	
 	var trialhistory = {}
 	trialhistory.trainingstage = []
@@ -137,13 +137,17 @@ async function readTrialHistoryFromDropbox(filepaths){
 	trialhistory.response = []
 	trialhistory.correct = []
 
+	/*
 	if (typeof filepaths == "string"){
+		
 		filepaths = [filepaths]
 	}
+	*/
 
 	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
-	filepaths.sort()
+	console.log(filepaths.sort()0
+
 
 	// Iterate over files and add relevant variables
 	for (var i = 0; i< filepaths.length; i++){
