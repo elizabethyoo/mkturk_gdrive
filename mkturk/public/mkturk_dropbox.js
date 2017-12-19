@@ -192,7 +192,6 @@ async function loadParametersfromDropbox(paramfile_path){
 
 		TASK = {}
 		TASK = data
-		console.log("LOAD PARAMETERS");
 
 		ENV.ParamFileName = filemeta.path_display; 
 		ENV.ParamFileRev = filemeta.rev
@@ -211,7 +210,7 @@ async function parseAutomatorFilefromDropbox(jsontxt_filepath){
 	// [{param:val, param:val}, {param:val, param:val}]
 
 	// Returns an array of identical format
-	var datastring = await loadTextFilefromDropbox(jsontxt_filepath)
+	var datastring = await loadTextFilefromDropbox(jsontxt_filepath);
 	data = JSON.parse(datastring);
 	return data
 

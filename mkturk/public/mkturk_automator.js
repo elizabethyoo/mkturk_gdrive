@@ -151,14 +151,29 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 	// Iterate over files and add relevant variables
 	for (var i = 0; i< filepaths.length; i++){
-		datastring = await loadTextFilefromGDrive(filepaths[i])
-		console.log(datastring);
+		//datastring = await loadTextFilefromGDrive(filepaths[i]);
+		//
+		//console.log(datastring);
+		console.log(filepaths[i])
+		downloadFile(filepaths[i]).then(function(data){
+
+		$.ajax({
+		  crossDomain: true,
+		  url: data.result.webContentLink,
+		  dataType: 'jsonp',
+		  cache: false
+		});
+
+		console.log(data);
+		
+	
 		//data = JSON.parse(datastring)
 		//console.log(data);
 
-		console.log("dis is iterating mew: " + i);
-		
+		console.log("test");
+		//parameters
 		task_data = datastring[2];
+		//performance based past data
 		trial_data = datastring[3];
 
 		console.log(task_data);

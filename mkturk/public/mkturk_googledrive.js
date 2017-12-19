@@ -165,7 +165,6 @@ function jsonp_callback(data) {
 		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true);
 		document.querySelector("button[name=doneEditingParams]").style.display = "block"
 		document.querySelector("button[name=doneEditingParams]").style.visibility = "visible";
-
 		console.log(data);
 	 }
 	reader.readAsText(data_blob);
