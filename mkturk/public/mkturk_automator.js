@@ -165,6 +165,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 		});
 
 		console.log(data);
+	})
 		
 	
 		//data = JSON.parse(datastring)
