@@ -126,9 +126,7 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 */
 
 //Global variable paramsData
-var paramsData = null;
 
-var test_data = 0
 
 
 function loadTextFilefromGDrive(textfile_path){
@@ -138,7 +136,7 @@ function loadTextFilefromGDrive(textfile_path){
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
 
-		$.ajax({
+	$.ajax({
 		  crossDomain: true,
 		  url: data.result.webContentLink,
 		  dataType: 'jsonp',
@@ -151,7 +149,6 @@ function loadTextFilefromGDrive(textfile_path){
 	console.error(error);
 		})
 	})
-	resolve(paramsData);	
 }
 
 //data is a javascript object; convert to text then blobify for compatibility with FileReader 
