@@ -205,6 +205,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	//document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
 
 	await editParamsPromise()
+	console.log(window.test_data);
 	var paramsButton = document.getElementById("doneEditingParams");
 
 	document.querySelector("button[name=doneEditingParams]").style.display = "none"
@@ -229,7 +230,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	console.log(subject_behavior_save_directory);
 	if (TASK.Automator != 0){
 		var history_file_paths = await getMostRecentBehavioralFilePathsFromGDrive(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
-		console.log(history_file_paths)
+		console.log(history_file_paths);
 		trialhistory = await readTrialHistoryFromGDrive(history_file_paths);		
 	}
 

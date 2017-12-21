@@ -5,7 +5,6 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 	var file_list = []
 	try{
 
-		console.log("is dis running");
 		var folderId = await pathToId(save_directory);
 		//console.log(folderId);
 		//TO DO: method for converting folder path to folder ID 
@@ -127,7 +126,10 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 */
 
 //Global variable paramsData
-var paramsData = null; 
+var paramsData = null;
+
+var test_data = 0
+
 
 function loadTextFilefromGDrive(textfile_path){
 	//console.log("textfile_id is: " + textfile_path);
@@ -135,6 +137,7 @@ function loadTextFilefromGDrive(textfile_path){
 
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
+		test_data = 1; 
 
 		$.ajax({
 		  crossDomain: true,
@@ -154,18 +157,19 @@ function loadTextFilefromGDrive(textfile_path){
 
 //data is a javascript object; convert to text then blobify for compatibility with FileReader 
 function jsonp_callback(data) {
+	console.log(data);
+	console.log(typeof data);
 	 var data_blob = new Blob([JSON.stringify(data)], {type : "text/plain"});
 	 var reader = new FileReader();
 	 reader.onload = function(e)  {
 	 	//print contents of blob, check that file contents were successfully converted  
 	 	var content = reader.result
 	 	var data = JSON.parse(reader.result);
-	 	//console.log(data);
 	 	updateStatusText(content);
 		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true);
 		document.querySelector("button[name=doneEditingParams]").style.display = "block"
 		document.querySelector("button[name=doneEditingParams]").style.visibility = "visible";
-		console.log(data);
+		test_data = 2;
 	 }
 	reader.readAsText(data_blob);
 
@@ -233,7 +237,6 @@ function searchFolderByName(name) {
 async function pathToId(path)  {
 	var components = path.split("/");
 	var folderName = components[components.length-2];
-	console.log(folderName);
 	var folderList = await searchFolderByName(folderName);
 	//folderList.result.file[0].id; 
 
