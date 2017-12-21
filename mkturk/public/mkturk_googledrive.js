@@ -137,7 +137,6 @@ function loadTextFilefromGDrive(textfile_path){
 
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
-		test_data = 1; 
 
 		$.ajax({
 		  crossDomain: true,
@@ -163,13 +162,13 @@ function jsonp_callback(data) {
 	 var reader = new FileReader();
 	 reader.onload = function(e)  {
 	 	//print contents of blob, check that file contents were successfully converted  
-	 	var content = reader.result
+	 	var content = reader.result;
+	 	//console.log(content);
 	 	var data = JSON.parse(reader.result);
 	 	updateStatusText(content);
 		document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",true);
 		document.querySelector("button[name=doneEditingParams]").style.display = "block"
 		document.querySelector("button[name=doneEditingParams]").style.visibility = "visible";
-		test_data = 2;
 	 }
 	reader.readAsText(data_blob);
 

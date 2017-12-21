@@ -136,51 +136,50 @@ async function readTrialHistoryFromGDrive(filepaths){
 	trialhistory.starttime = []
 	trialhistory.response = []
 	trialhistory.correct = []
-
 	
 	if (typeof filepaths == "string"){
 		
 		filepaths = [filepaths]
 	}
-	
 
+	
 	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
 	filepaths.sort();
 	
-
-	// Iterate over files and add relevant variables
-	for (var i = 0; i< filepaths.length; i++){
-		//datastring = await loadTextFilefromGDrive(filepaths[i]);
-		//
-		//console.log(datastring);
-		console.log(filepaths[i])
-		downloadFile(filepaths[i]).then(function(data){
-
-		$.ajax({
+	//AJAX REQUESTS IN PARALLEL 
+	downloadFile(filepaths[0]).then(function(data){
+	$.ajax({
 		  crossDomain: true,
 		  url: data.result.webContentLink,
 		  dataType: 'jsonp',
 		  cache: false
 		});
-
+	}.then{
+	function(data)  {
+		console.log("success!");
 		console.log(data);
-	})
-		
-	
-		//data = JSON.parse(datastring)
-		//console.log(data);
+	}, 
+	function(error)  {
+		console.log(error);
+	}}
 
-		console.log("test");
+
+
+	// Iterate over files and add relevant variables
+	for (var i = 0; i< filepaths.length; i++){
+		//datastring = await loadTextFilefromGDrive(filepaths[i]);
+		//console.log(datastring);
+		console.log(filepaths[i])
+		downloadFile(filepaths[i]).then(function(data){
+
+		//PROCESS DATA
+	})
+		//data = JSON.parse(datastring)
 		//parameters
 		task_data = datastring[2];
 		//performance based past data
 		trial_data = datastring[3];
-
-		console.log(task_data);
-		console.log(trial_data);
-
-		
 
 		var numTRIALs = trial_data.Response.length; 
 		// Iterate over TRIALs
