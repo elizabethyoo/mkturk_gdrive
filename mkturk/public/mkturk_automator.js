@@ -129,9 +129,10 @@ function stageHash(task){
 }
 
 
-async function readTrialHistoryFromGDrive(filepaths){
-	
-	var trialhistory = {}
+function readTrialHistoryFromGDrive(filepaths){
+	console.log("readTrialHistoryFromGDrive");
+
+ 	var trialhistory = {}
 	trialhistory.trainingstage = []
 	trialhistory.starttime = []
 	trialhistory.response = []
@@ -141,30 +142,29 @@ async function readTrialHistoryFromGDrive(filepaths){
 		
 		filepaths = [filepaths]
 	}
-
 	
 	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
 	filepaths.sort();
 	
-	//AJAX REQUESTS IN PARALLEL 
+	//AJAX REQUESTS IN PARALLEL
+
+	return new Promise(function(resolve,reject){
 	downloadFile(filepaths[0]).then(function(data){
-	$.ajax({
+		$.ajax({
 		  crossDomain: true,
 		  url: data.result.webContentLink,
 		  dataType: 'jsonp',
 		  cache: false
 		});
-	}.then{
-	function(data)  {
-		console.log("success!");
-		console.log(data);
-	}, 
-	function(error)  {
-		console.log(error);
-	}}
 
+		resolve(data);
+		
+	}).catch(function(error){
+	console.error(error);
+		})
 
+	
 
 	// Iterate over files and add relevant variables
 	for (var i = 0; i< filepaths.length; i++){
@@ -199,7 +199,9 @@ async function readTrialHistoryFromGDrive(filepaths){
 		}
 	}
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
-	return trialhistory
+
+	return trialhistory;
+ 
 }
 
 
