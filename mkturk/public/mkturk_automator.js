@@ -164,8 +164,23 @@ async function readTrialHistoryFromGDrive(filepaths){
 		  cache: false
 		});
 
-		console.log(data);
+		function trialhistory_callback(data)  {
+			console.log("we're here");
+			console.log(data);
+		}
+
+		//console.log(data);
+		
 	})
+
+
+
+		//callback 1
+
+		//callback 2 
+		//callback 3
+		//callback 4
+		//callback 5
 		
 	
 		//data = JSON.parse(datastring)

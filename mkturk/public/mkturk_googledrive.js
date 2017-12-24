@@ -137,7 +137,6 @@ function loadTextFilefromGDrive(textfile_path){
 
 	return new Promise(function(resolve,reject){
 	downloadFile(textfile_path).then(function(data){
-		test_data = 1; 
 
 		$.ajax({
 		  crossDomain: true,
