@@ -131,25 +131,13 @@ function stageHash(task){
 
 function trialhistory_callback(data)  {
 	console.log(data);
+	obj.push(data);
+	console.log(obj);
+
 }	
 
-let iterator = generatorTest();
-console.log(iterator);
 
-function *generatorTest(pathlist)  {
-	console.log(pathlist[0]);
-	console.log("hi");
-	let a = yield downloadFile(filepaths[0]).then(function(data){
-	console.log(data);
-	$.ajax({
-	  type: 'GET',
-	  url: data.result.webContentLink,
-	  dataType: 'jsonp',
-	  cache: false
-	});
-		
-	})
-}
+
 
 async function readTrialHistoryFromGDrive(filepaths){
 	
@@ -170,12 +158,40 @@ async function readTrialHistoryFromGDrive(filepaths){
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
 	filepaths.sort();
 	console.log(filepaths);
+
+
+
+	//generator test
+	var allData = "{}";
+	var obj = JSON.parse(allData); 
+	console.log(obj);
+
+	function *generatorTest()  {
+		console.log(filepaths);
+		console.log(filepaths[0]);
+		console.log("hi");
+		let a = yield downloadFile(filepaths[0]).then(function(data){
+		console.log(data);
+		$.ajax({
+		  type: 'GET',
+		  url: data.result.webContentLink,
+		  dataType: 'jsonp',
+		  cache: false
+		});
+			
+		})
+	}
+
+	generatorTest(filepaths);
+	let iterator = generatorTest();
+	let firstYield = iterator.next();
+	console.log(firstYield);
 	
 
 	// Iterate over files and add relevant variables
 	//datastring = await loadTextFilefromGDrive(filepaths[i]);
 	//console.log(datastring);
-	
+	/*
 	console.log(filepaths[0])
 	downloadFile(filepaths[0]).then(function(data){
 	console.log(data);
@@ -188,7 +204,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 		
 	})
 
-
+	*/
 	
 
 
