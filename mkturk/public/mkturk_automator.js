@@ -129,14 +129,14 @@ function stageHash(task){
 }
 
 
-function trialhistory_callback(data)  {
-	console.log(data);
-	obj.push(data);
-	console.log(obj);
-
-}	
 
 
+
+
+var allData = [];
+let iterator = generatorTest();
+let firstYield = iterator.next();
+console.log(firstYield);
 
 
 async function readTrialHistoryFromGDrive(filepaths){
@@ -162,30 +162,65 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 
 	//generator test
-	var allData = "{}";
-	var obj = JSON.parse(allData); 
-	console.log(obj);
+	
 
 	function *generatorTest()  {
 		console.log(filepaths);
 		console.log(filepaths[0]);
 		console.log("hi");
-		let a = yield downloadFile(filepaths[0]).then(function(data){
-		console.log(data);
-		$.ajax({
-		  type: 'GET',
-		  url: data.result.webContentLink,
-		  dataType: 'jsonp',
-		  cache: false
-		});
-			
+		let first = yield downloadFile(filepaths[0]).then(function(data){
+			console.log(data);
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
 		})
+		
+		let second = yield downloadFile(filepaths[1]).then(function(data){
+			console.log(data);
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+		})
+
+
+	console.log("test");
+		//parameters
+		task_data = datastring[2];
+		//performance based past data
+		trial_data = datastring[3];
+
+		console.log(task_data);
+		console.log(trial_data);
+
+		
+		//for each iteration 
+		var numTRIALs = trial_data.Response.length; 
+		// Iterate over TRIALs
+		for (var i_trial = 0; i_trial<numTRIALs; i_trial++){
+			// Correct/incorrect TRIAL
+			var correct = Number(trial_data.Response[i_trial] == trial_data.CorrectItem[i_trial])
+			trialhistory.correct.push(correct)
+
+			// Current automator stage 
+			var current_stage = stageHash(task_data)
+			trialhistory.trainingstage.push(current_stage)
+
+			// Start time (fixation dot appears) of trial 
+			var starttime = trial_data.StartTime[i_trial]
+			trialhistory.starttime.push(starttime)
+			
+		}
+	
+	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
+
 	}
 
-	generatorTest(filepaths);
-	let iterator = generatorTest();
-	let firstYield = iterator.next();
-	console.log(firstYield);
 	
 
 	// Iterate over files and add relevant variables
@@ -219,43 +254,36 @@ async function readTrialHistoryFromGDrive(filepaths){
 		//data = JSON.parse(datastring)
 		//console.log(data);
 
-		console.log("test");
-		//parameters
-		task_data = datastring[2];
-		//performance based past data
-		trial_data = datastring[3];
-
-		console.log(task_data);
-		console.log(trial_data);
-
 		
-		//for each iteration 
-		var numTRIALs = trial_data.Response.length; 
-		// Iterate over TRIALs
-		for (var i_trial = 0; i_trial<numTRIALs; i_trial++){
-			// Correct/incorrect TRIAL
-			var correct = Number(trial_data.Response[i_trial] == trial_data.CorrectItem[i_trial])
-			trialhistory.correct.push(correct)
-
-			// Current automator stage 
-			var current_stage = stageHash(task_data)
-			trialhistory.trainingstage.push(current_stage)
-
-			// Start time (fixation dot appears) of trial 
-			var starttime = trial_data.StartTime[i_trial]
-			trialhistory.starttime.push(starttime)
-			
-		}
-	
-	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
 	return trialhistory
 }
 
 
-	function trialhistory_callback(data)  {
-		console.log(data);
-		
-	}
+//locate 5 most recent files and wrap them in callbacks --> make wrapper 
+//implement the remaining 4 ajax requests 
+
+function trialhistory_callback(data)  {
+	console.log("we're at callback1");
+	console.log(data);
+	allData.push(data);
+	console.log(allData);
+	let secondYield = iterator.next();
+	//parse into JSON
+	//task_data
+	//trial_data 
+
+}	
+
+function trialhistory_callback2(data)  {
+	console.log("we're at callback2");
+	console.log(data);
+	allData.push(data);
+	console.log(allData);
+	//parse into JSON
+	//task_data
+	//trial_data 
+
+}
 
 
 function computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects){
