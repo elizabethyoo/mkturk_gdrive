@@ -134,10 +134,6 @@ function stageHash(task){
 
 
 var allData = [];
-let iterator = generatorTest();
-let firstYield = iterator.next();
-console.log(firstYield);
-
 
 async function readTrialHistoryFromGDrive(filepaths){
 	
@@ -221,6 +217,10 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 	}
 
+	generatorTest(filepaths);
+	let iterator = generatorTest();
+	let firstYield = iterator.next();
+	console.log(firstYield);
 	
 
 	// Iterate over files and add relevant variables
