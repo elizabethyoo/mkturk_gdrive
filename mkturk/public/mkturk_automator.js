@@ -133,7 +133,10 @@ function trialhistory_callback(data)  {
 	console.log(data);
 }	
 
-async function *readTrialHistoryFromGDrive(filepaths){
+let iterator = readTrialHistoryFromGDrive();
+console.log(iterator);
+
+async function* readTrialHistoryFromGDrive(filepaths){
 	
 	var trialhistory = {}
 	trialhistory.trainingstage = []
