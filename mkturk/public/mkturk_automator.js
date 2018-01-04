@@ -129,6 +129,10 @@ function stageHash(task){
 }
 
 
+function trialhistory_callback(data)  {
+	console.log(data);
+}	
+
 async function readTrialHistoryFromGDrive(filepaths){
 	
 	var trialhistory = {}
@@ -147,32 +151,27 @@ async function readTrialHistoryFromGDrive(filepaths){
 	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
 	filepaths.sort();
+	console.log(filepaths);
 	
 
 	// Iterate over files and add relevant variables
-	for (var i = 0; i< filepaths.length; i++){
-		//datastring = await loadTextFilefromGDrive(filepaths[i]);
-		//
-		//console.log(datastring);
-		console.log(filepaths[i])
-		downloadFile(filepaths[i]).then(function(data){
-
-		$.ajax({
-		  crossDomain: true,
-		  url: data.result.webContentLink,
-		  dataType: 'jsonp',
-		  cache: false
-		});
-
-		function trialhistory_callback(data)  {
-			console.log("we're here");
-			console.log(data);
-		}
-
-		//console.log(data);
+	//datastring = await loadTextFilefromGDrive(filepaths[i]);
+	//console.log(datastring);
+	
+	console.log(filepaths[0])
+	downloadFile(filepaths[0]).then(function(data){
+	console.log(data);
+	$.ajax({
+	  type: 'GET',
+	  url: data.result.webContentLink,
+	  dataType: 'jsonp',
+	  cache: false
+	});
 		
 	})
 
+
+	
 
 
 		//callback 1
@@ -196,7 +195,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 		console.log(trial_data);
 
 		
-
+		//for each iteration 
 		var numTRIALs = trial_data.Response.length; 
 		// Iterate over TRIALs
 		for (var i_trial = 0; i_trial<numTRIALs; i_trial++){
@@ -213,10 +212,16 @@ async function readTrialHistoryFromGDrive(filepaths){
 			trialhistory.starttime.push(starttime)
 			
 		}
-	}
+	
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
 	return trialhistory
 }
+
+
+	function trialhistory_callback(data)  {
+		console.log(data);
+		console.log(success);
+	}
 
 
 function computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects){
