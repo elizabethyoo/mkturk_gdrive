@@ -133,10 +133,25 @@ function trialhistory_callback(data)  {
 	console.log(data);
 }	
 
-let iterator = readTrialHistoryFromGDrive();
+let iterator = generatorTest();
 console.log(iterator);
 
-async function* readTrialHistoryFromGDrive(filepaths){
+function *generatorTest(pathlist)  {
+	console.log(pathlist[0]);
+	console.log("hi");
+	let a = yield downloadFile(filepaths[0]).then(function(data){
+	console.log(data);
+	$.ajax({
+	  type: 'GET',
+	  url: data.result.webContentLink,
+	  dataType: 'jsonp',
+	  cache: false
+	});
+		
+	})
+}
+
+async function readTrialHistoryFromGDrive(filepaths){
 	
 	var trialhistory = {}
 	trialhistory.trainingstage = []
