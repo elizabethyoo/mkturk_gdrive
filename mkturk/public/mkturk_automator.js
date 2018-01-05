@@ -130,7 +130,36 @@ function stageHash(task){
 
 
 
+var allData = [];
+let iterator = generatorTest();
+let firstYield = iterator.next();
+console.log(firstYield);
 
+//locate 5 most recent files and wrap them in callbacks --> make wrapper 
+//implement the remaining 4 ajax requests 
+
+function trialhistory_callback(data)  {
+	console.log("we're at callback1");
+	console.log(data);
+	allData.push(data);
+	console.log(allData);
+	let secondYield = iterator.next();
+	//parse into JSON
+	//task_data
+	//trial_data 
+
+}	
+
+function trialhistory_callback2(data)  {
+	console.log("we're at callback2");
+	console.log(data);
+	allData.push(data);
+	console.log(allData);
+	//parse into JSON
+	//task_data
+	//trial_data 
+
+}
 
 
 
@@ -184,6 +213,8 @@ async function readTrialHistoryFromGDrive(filepaths){
 			});
 		})
 
+	}
+
 
 	console.log("test");
 		//parameters
@@ -215,38 +246,10 @@ async function readTrialHistoryFromGDrive(filepaths){
 	
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
 
+	return trialhistory
 	}
 
-	var allData = [];
-let iterator = generatorTest();
-let firstYield = iterator.next();
-console.log(firstYield);
-
-//locate 5 most recent files and wrap them in callbacks --> make wrapper 
-//implement the remaining 4 ajax requests 
-
-function trialhistory_callback(data)  {
-	console.log("we're at callback1");
-	console.log(data);
-	allData.push(data);
-	console.log(allData);
-	let secondYield = iterator.next();
-	//parse into JSON
-	//task_data
-	//trial_data 
-
-}	
-
-function trialhistory_callback2(data)  {
-	console.log("we're at callback2");
-	console.log(data);
-	allData.push(data);
-	console.log(allData);
-	//parse into JSON
-	//task_data
-	//trial_data 
-
-}
+	
 	
 
 	// Iterate over files and add relevant variables
@@ -281,8 +284,6 @@ function trialhistory_callback2(data)  {
 		//console.log(data);
 
 		
-	return trialhistory
-}
 
 
 
