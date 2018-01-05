@@ -132,11 +132,11 @@ function stageHash(task){
 
 var allData = [];
 
-function *generatorTest()  {
-		console.log(filepaths);
-		console.log(filepaths[0]);
+function *generatorTest(list)  {
+		console.log(list);
+		console.log(list[0]);
 		console.log("hi");
-		let first = yield downloadFile(filepaths[0]).then(function(data){
+		let first = yield downloadFile(list[0]).then(function(data){
 			console.log(data);
 			$.ajax({
 			  type: 'GET',
@@ -146,7 +146,7 @@ function *generatorTest()  {
 			});
 		})
 		
-		let second = yield downloadFile(filepaths[1]).then(function(data){
+		let second = yield downloadFile(list[1]).then(function(data){
 			console.log(data);
 			$.ajax({
 			  type: 'GET',
