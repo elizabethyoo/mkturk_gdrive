@@ -131,6 +131,32 @@ function stageHash(task){
 
 
 var allData = [];
+
+function *generatorTest()  {
+		console.log(filepaths);
+		console.log(filepaths[0]);
+		console.log("hi");
+		let first = yield downloadFile(filepaths[0]).then(function(data){
+			console.log(data);
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+		})
+		
+		let second = yield downloadFile(filepaths[1]).then(function(data){
+			console.log(data);
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+		})
+
+	}
 let iterator = generatorTest();
 let firstYield = iterator.next();
 console.log(firstYield);
@@ -189,31 +215,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 	//generator test
 	
 
-	function *generatorTest()  {
-		console.log(filepaths);
-		console.log(filepaths[0]);
-		console.log("hi");
-		let first = yield downloadFile(filepaths[0]).then(function(data){
-			console.log(data);
-			$.ajax({
-			  type: 'GET',
-			  url: data.result.webContentLink,
-			  dataType: 'jsonp',
-			  cache: false
-			});
-		})
-		
-		let second = yield downloadFile(filepaths[1]).then(function(data){
-			console.log(data);
-			$.ajax({
-			  type: 'GET',
-			  url: data.result.webContentLink,
-			  dataType: 'jsonp',
-			  cache: false
-			});
-		})
-
-	}
+	
 
 
 	console.log("test");
