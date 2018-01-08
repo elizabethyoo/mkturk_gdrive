@@ -142,7 +142,7 @@ function trialhistory_callback(data)  {
 	console.log(data);
 	allData.push(data);
 	console.log(allData);
-	let secondYield = iterator.next();
+	//var secondYield = iterator.next();
 	//parse into JSON
 	//task_data
 	//trial_data 
@@ -153,6 +153,7 @@ function trialhistory_callback2(data)  {
 	console.log("we're at callback2");
 	console.log(data);
 	allData.push(data);
+	console.log("after second ajax");
 	console.log(allData);
 	//parse into JSON
 	//task_data
@@ -163,7 +164,7 @@ function trialhistory_callback2(data)  {
 
 
 //generator test
-function *generatorTest(x, y)  {
+function *generatorTest(x)  {
 	//console.log(list);
 	//console.log(list[0]);
 	console.log("hi");
@@ -177,6 +178,7 @@ function *generatorTest(x, y)  {
 		});
 	})
 
+	/*
 	let second = yield downloadFile(y).then(function(data){
 		console.log(data);
 		$.ajax({
@@ -186,7 +188,8 @@ function *generatorTest(x, y)  {
 		  cache: false
 		});
 	})
-
+	
+	*/
 
 }
 
@@ -217,11 +220,13 @@ async function readTrialHistoryFromGDrive(filepaths){
 	console.log(filepaths);
 	console.log(filepaths[0]);
 
-	let iterator = generatorTest(filepaths[0], filepaths[1]);
+	let iterator = generatorTest(filepaths[0]);
 	let firstYield = iterator.next();
 
 	//let secondYield = iterator.next();
 
+	let iterator_2 = generatorTest(filepaths[1]);
+	let iternator_2 = iterator.next();
 
 
 
