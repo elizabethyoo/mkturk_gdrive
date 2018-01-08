@@ -160,9 +160,12 @@ function trialhistory_callback2(data)  {
 
 }
 
-let iterator = generatorTest();
-let firstYield = iterator.next();
-let secondYield = iterator.next();
+
+
+//generator test
+
+
+//let secondYield = iterator.next();
 
 
 async function readTrialHistoryFromGDrive(filepaths){
@@ -187,12 +190,12 @@ async function readTrialHistoryFromGDrive(filepaths){
 	console.log(filepaths[0]);
 
 
-	//generator test
+
 	function *generatorTest()  {
 		//console.log(list);
 		//console.log(list[0]);
 		console.log("hi");
-		let first = yield downloadFile(filepaths[0]).then(function(data){
+		let first = yield downloadFile(file).then(function(data){
 			console.log(data);
 			$.ajax({
 			  type: 'GET',
@@ -201,24 +204,13 @@ async function readTrialHistoryFromGDrive(filepaths){
 			  cache: false
 			});
 		})
-		
-		
-		let second = yield downloadFile(filepaths[1]).then(function(data){
-			console.log(data);
-			$.ajax({
-			  type: 'GET',
-			  url: data.result.webContentLink,
-			  dataType: 'jsonp',
-			  cache: false
-			});
-		})
-	
 
 	}
 
-
-
-	
+let iterator = generatorTest();
+let second_it = generatorTest();
+let firstYield = iterator.next();
+let seocondYeild = iterator.next(filepaths[0]);
 
 
 	console.log("test");
