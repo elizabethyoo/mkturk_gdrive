@@ -142,7 +142,7 @@ function trialhistory_callback(data)  {
 	console.log(data);
 	allData.push(data);
 	console.log(allData);
-	//let secondYield = iterator.next();
+	let secondYield = iterator.next();
 	//parse into JSON
 	//task_data
 	//trial_data 
@@ -163,6 +163,33 @@ function trialhistory_callback2(data)  {
 
 
 //generator test
+function *generatorTest(x, y)  {
+	//console.log(list);
+	//console.log(list[0]);
+	console.log("hi");
+	let first = yield downloadFile(x).then(function(data){
+		console.log(data);
+		$.ajax({
+		  type: 'GET',
+		  url: data.result.webContentLink,
+		  dataType: 'jsonp',
+		  cache: false
+		});
+	})
+
+	let second = yield downloadFile(y).then(function(data){
+		console.log(data);
+		$.ajax({
+		  type: 'GET',
+		  url: data.result.webContentLink,
+		  dataType: 'jsonp',
+		  cache: false
+		});
+	})
+
+
+}
+
 
 
 //let secondYield = iterator.next();
@@ -185,33 +212,17 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
+
 	filepaths.sort();
 	console.log(filepaths);
 	console.log(filepaths[0]);
 
+	let iterator = generatorTest(filepaths[0], filepaths[1]);
+	let firstYield = iterator.next();
+
+	//let secondYield = iterator.next();
 
 
-	function *generatorTest()  {
-		//console.log(list);
-		//console.log(list[0]);
-		let file = yield "file"; 
-		console.log(file);
-		console.log("start generatorTest");
-		let first = yield downloadFile(filepaths[0]).then(function(data){
-			console.log(data);
-			$.ajax({
-			  type: 'GET',
-			  url: data.result.webContentLink,
-			  dataType: 'jsonp',
-			  cache: false
-			});
-		})
-
-	}
-
-let iterator = generatorTest();
-let firstYield = iterator.next(filepaths[0]);
-let seocondYeild = iterator.next();
 
 
 	console.log("test");
