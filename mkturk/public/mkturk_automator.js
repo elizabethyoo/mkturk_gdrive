@@ -132,34 +132,7 @@ function stageHash(task){
 
 var allData = [];
 
-function *generatorTest(list)  {
-		console.log(list);
-		console.log(list[0]);
-		console.log("hi");
-		let first = yield downloadFile(list[0]).then(function(data){
-			console.log(data);
-			$.ajax({
-			  type: 'GET',
-			  url: data.result.webContentLink,
-			  dataType: 'jsonp',
-			  cache: false
-			});
-		})
-		
-		let second = yield downloadFile(list[1]).then(function(data){
-			console.log(data);
-			$.ajax({
-			  type: 'GET',
-			  url: data.result.webContentLink,
-			  dataType: 'jsonp',
-			  cache: false
-			});
-		})
 
-	}
-let iterator = generatorTest();
-let firstYield = iterator.next();
-console.log(firstYield);
 
 //locate 5 most recent files and wrap them in callbacks --> make wrapper 
 //implement the remaining 4 ajax requests 
@@ -169,7 +142,7 @@ function trialhistory_callback(data)  {
 	console.log(data);
 	allData.push(data);
 	console.log(allData);
-	let secondYield = iterator.next();
+	//let secondYield = iterator.next();
 	//parse into JSON
 	//task_data
 	//trial_data 
@@ -187,7 +160,9 @@ function trialhistory_callback2(data)  {
 
 }
 
-
+let iterator = generatorTest();
+let firstYield = iterator.next();
+let secondYield = iterator.next();
 
 
 async function readTrialHistoryFromGDrive(filepaths){
@@ -209,11 +184,39 @@ async function readTrialHistoryFromGDrive(filepaths){
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
 	filepaths.sort();
 	console.log(filepaths);
-
+	console.log(filepaths[0]);
 
 
 	//generator test
+	function *generatorTest()  {
+		//console.log(list);
+		//console.log(list[0]);
+		console.log("hi");
+		let first = yield downloadFile(filepaths[0]).then(function(data){
+			console.log(data);
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+		})
+		
+		
+		let second = yield downloadFile(filepaths[1]).then(function(data){
+			console.log(data);
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+		})
 	
+
+	}
+
+
 
 	
 
