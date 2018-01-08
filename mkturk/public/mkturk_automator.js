@@ -139,49 +139,52 @@ var allData = [];
 
 function trialhistory_callback(data)  {
 	console.log("we're at callback1");
-	console.log(data);
 	allData.push(data);
 	console.log(allData);
-	//var secondYield = iterator.next();
-	//parse into JSON
-	//task_data
-	//trial_data 
-
 }	
 
 function trialhistory_callback2(data)  {
 	console.log("we're at callback2");
-	console.log(data);
 	allData.push(data);
-	console.log("after second ajax");
 	console.log(allData);
-	//parse into JSON
-	//task_data
-	//trial_data 
+}
 
+function trialhistory_callback3(data)  {
+	console.log("we're at callback3");
+	allData.push(data);
+	console.log(allData);
+}
+
+function trialhistory_callback4(data)  {
+	console.log("we're at callback4");
+	allData.push(data);
+	console.log(allData);
+}
+
+function trialhistory_callback5(data)  {
+	console.log("we're at callback5");
+	allData.push(data);
+	console.log(allData);
 }
 
 
 
 //generator test
-function *generatorTest(list)  {
+function *getAllTextFileData(list)  {
 	//console.log(list);
 	//console.log(list[0]);
-	for (i = 0; i < 2; i++)  {
+	console.log(list.length);
+	for (i = 0; i < list.length; i++)  {
 		let content = yield downloadFile(list[i]).then(function(data){
-		console.log(data);
-		$.ajax({
-		  type: 'GET',
-		  url: data.result.webContentLink,
-		  dataType: 'jsonp',
-		  cache: false
-		});
-	})
-	}
-	
-
-	
-
+			console.log(data);
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+		})
+	}	
 }
 
 
@@ -211,9 +214,12 @@ async function readTrialHistoryFromGDrive(filepaths){
 	console.log(filepaths);
 	console.log(filepaths[0]);
 
-	let iterator = generatorTest(filepaths);
-	let firstYield = iterator.next();
-	let secondYield = iterator.next();
+	let iterator = getAllTextFileData(filepaths);
+	for (i = 0; i < filepaths.length; i++)  {
+		iterator.next();	
+	}
+
+
 
 
 
