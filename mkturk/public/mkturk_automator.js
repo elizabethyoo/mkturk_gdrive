@@ -194,8 +194,10 @@ async function readTrialHistoryFromGDrive(filepaths){
 	function *generatorTest()  {
 		//console.log(list);
 		//console.log(list[0]);
-		console.log("hi");
-		let first = yield downloadFile(file).then(function(data){
+		let file = yield "file"; 
+		console.log(file);
+		console.log("start generatorTest");
+		let first = yield downloadFile(filepaths[0]).then(function(data){
 			console.log(data);
 			$.ajax({
 			  type: 'GET',
@@ -208,9 +210,8 @@ async function readTrialHistoryFromGDrive(filepaths){
 	}
 
 let iterator = generatorTest();
-let second_it = generatorTest();
-let firstYield = iterator.next();
-let seocondYeild = iterator.next(filepaths[0]);
+let firstYield = iterator.next(filepaths[0]);
+let seocondYeild = iterator.next();
 
 
 	console.log("test");
