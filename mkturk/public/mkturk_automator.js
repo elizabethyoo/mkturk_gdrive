@@ -248,6 +248,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 	filepaths.sort();
 	console.log(filepaths);
 
+
 	//Iterator that pauses the program at yields 
 	let iterator = getAllTextFileData(filepaths);
 	iterator.next();
@@ -256,9 +257,14 @@ async function readTrialHistoryFromGDrive(filepaths){
 		console.log(iterator.next().value);	
 
 	}
-	iterator.next();
-	console.log("out of callback");
+	//iterator.next();
 
+	console.log("out of callback");
+	console.log(allData);
+
+	//for each of the history files
+	//assign task_data and trial_data 
+	for (i = 0; i < filepaths.length; i++)  {
 		//parameters
 		task_data = datastring[2];
 		//performance based past data
@@ -266,8 +272,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 		console.log(task_data);
 		console.log(trial_data);
-
-		
+	
 		//for each iteration 
 		var numTRIALs = trial_data.Response.length; 
 		// Iterate over TRIALs
@@ -288,7 +293,10 @@ async function readTrialHistoryFromGDrive(filepaths){
 	
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
 
-	return trialhistory
+	}	
+
+	return trialhistory;
+
 	}
 
 
