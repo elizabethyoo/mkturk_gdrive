@@ -135,57 +135,90 @@ var allData = [];
 
 
 //locate 5 most recent files and wrap them in callbacks --> make wrapper 
-//implement the remaining 4 ajax requests 
+
 
 function trialhistory_callback(data)  {
 	console.log("we're at callback1");
 	allData.push(data);
-	console.log(allData);
 }	
 
 function trialhistory_callback2(data)  {
 	console.log("we're at callback2");
 	allData.push(data);
-	console.log(allData);
 }
 
 function trialhistory_callback3(data)  {
 	console.log("we're at callback3");
 	allData.push(data);
-	console.log(allData);
 }
 
 function trialhistory_callback4(data)  {
 	console.log("we're at callback4");
 	allData.push(data);
-	console.log(allData);
 }
 
 function trialhistory_callback5(data)  {
 	console.log("we're at callback5");
 	allData.push(data);
-	console.log(allData);
 }
 
 
 
 //generator test
 function *getAllTextFileData(list)  {
-	//console.log(list);
-	//console.log(list[0]);
+
 	console.log(list.length);
-	for (i = 0; i < list.length; i++)  {
-		let content = yield downloadFile(list[i]).then(function(data){
-			console.log(data);
+		
+		let content = yield downloadFile(list[0]).then(function(data){
 			$.ajax({
 			  type: 'GET',
 			  url: data.result.webContentLink,
 			  dataType: 'jsonp',
 			  cache: false
 			});
-		})
-	}	
+		});
+
+		let content_2 = yield downloadFile(list[1]).then(function(data){
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+
+		});
+
+		let content_3 = yield downloadFile(list[2]).then(function(data){
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+
+		});
+
+		let content_4 = yield downloadFile(list[3]).then(function(data){
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+
+		});
+
+		let content_5 = yield downloadFile(list[4]).then(function(data){
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+		});
+
 }
+
 
 
 
@@ -201,30 +234,31 @@ async function readTrialHistoryFromGDrive(filepaths){
 	trialhistory.correct = []
 
 	
+	//why is this necessary? 
 	if (typeof filepaths == "string"){
 		
 		filepaths = [filepaths]
 	}
 	
-
 	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
 
+	//TO DO: get file name or timestamp with file id and then sort chronologically 
+	//currently sorted alphabetically by file id  
 	filepaths.sort();
 	console.log(filepaths);
-	console.log(filepaths[0]);
 
+	//Iterator that pauses the program at yields 
 	let iterator = getAllTextFileData(filepaths);
-	for (i = 0; i < filepaths.length; i++)  {
-		iterator.next();	
+	iterator.next();
+	for (i = 0; i < 4 ; i++)  {
+		console.log(i + " get data of: " + filepaths[i]);
+		console.log(iterator.next().value);	
+
 	}
+	iterator.next();
+	console.log("out of callback");
 
-
-
-
-
-
-	console.log("test");
 		//parameters
 		task_data = datastring[2];
 		//performance based past data
@@ -256,43 +290,6 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 	return trialhistory
 	}
-
-	
-	
-
-	// Iterate over files and add relevant variables
-	//datastring = await loadTextFilefromGDrive(filepaths[i]);
-	//console.log(datastring);
-	/*
-	console.log(filepaths[0])
-	downloadFile(filepaths[0]).then(function(data){
-	console.log(data);
-	$.ajax({
-	  type: 'GET',
-	  url: data.result.webContentLink,
-	  dataType: 'jsonp',
-	  cache: false
-	});
-		
-	})
-
-	*/
-	
-
-
-		//callback 1
-
-		//callback 2 
-		//callback 3
-		//callback 4
-		//callback 5
-		
-	
-		//data = JSON.parse(datastring)
-		//console.log(data);
-
-		
-
 
 
 
