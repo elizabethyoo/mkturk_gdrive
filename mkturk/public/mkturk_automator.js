@@ -129,15 +129,136 @@ function stageHash(task){
 }
 
 
-function readTrialHistoryFromGDrive(filepaths){
-	console.log("readTrialHistoryFromGDrive");
 
- 	var trialhistory = {}
+
+var allData = [];
+
+
+var iterator;
+var resolveFunc;
+//TO DO IN GOOGLEDRIVE.JS: sort file paths chronologically by name not id s.t. we have 5 most recent data files 
+
+//TO DO: define promise whose resolveFunc is resolve --> resolve will later becalled in the last callback function 
+
+
+//locate 5 most recent files and wrap them in callbacks --> make wrapper 
+
+//TO DO: all data files wrapped in same callback function, said callback called only once below
+function trialhistory_callback(data)  {
+	console.log("we're at callback1");
+	console.log(iterator);
+	allData.push(data);
+	//value = iterator.next();
+	//TO DO: Uncomment 
+	/*
+	if (value.done) {
+		resolveFunc(allData);
+	}
+	*/
+}	
+
+function trialhistory_callback2(data)  {
+	console.log("we're at callback2");
+	allData.push(data);
+}
+
+function trialhistory_callback3(data)  {
+	console.log("we're at callback3");
+	allData.push(data);
+}
+
+function trialhistory_callback4(data)  {
+	console.log("we're at callback4");
+	allData.push(data);
+}
+
+function trialhistory_callback5(data)  {
+	console.log("we're at callback5");
+	allData.push(data);
+}
+
+
+
+//generator test
+function *getAllTextFileData(list)  {
+
+	console.log(list.length);
+
+	for (i = 0; i < list.length; i++) {
+		let content = "bla"
+		downloadFile(list[i]).then(function(data){
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+		});
+		console.log("content: " + i);
+		yield i;
+	}
+
+	/*
+		
+		
+
+		let content_2 = yield downloadFile(list[1]).then(function(data){
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+
+		});
+
+		let content_3 = yield downloadFile(list[2]).then(function(data){
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+
+		});
+
+		let content_4 = yield downloadFile(list[3]).then(function(data){
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+
+		});
+
+		let content_5 = yield downloadFile(list[4]).then(function(data){
+			$.ajax({
+			  type: 'GET',
+			  url: data.result.webContentLink,
+			  dataType: 'jsonp',
+			  cache: false
+			});
+		});
+		*/
+
+}
+
+
+
+
+//let secondYield = iterator.next();
+
+
+async function readTrialHistoryFromGDrive(filepaths){
+	
+	var trialhistory = {}
 	trialhistory.trainingstage = []
 	trialhistory.starttime = []
 	trialhistory.response = []
 	trialhistory.correct = []
 	
+	//why is this necessary? 
 	if (typeof filepaths == "string"){
 		
 		filepaths = [filepaths]
@@ -145,41 +266,39 @@ function readTrialHistoryFromGDrive(filepaths){
 	
 	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
+
+	//TO DO: get file name or timestamp with file id and then sort chronologically 
+	//currently sorted alphabetically by file id  
 	filepaths.sort();
-	
-	//AJAX REQUESTS IN PARALLEL
 
-	return new Promise(function(resolve,reject){
-	downloadFile(filepaths[0]).then(function(data){
-		$.ajax({
-		  crossDomain: true,
-		  url: data.result.webContentLink,
-		  dataType: 'jsonp',
-		  cache: false
-		});
+	console.log(filepaths);
 
-		resolve(data);
-		
-	}).catch(function(error){
-	console.error(error);
-		})
 
+	//Iterator that pauses the program at yields 
+	iterator = getAllTextFileData(filepaths);
+	iterator.next();
+	value = iterator.next();
 	
 
-	// Iterate over files and add relevant variables
-	for (var i = 0; i< filepaths.length; i++){
-		//datastring = await loadTextFilefromGDrive(filepaths[i]);
-		//console.log(datastring);
-		console.log(filepaths[i])
-		downloadFile(filepaths[i]).then(function(data){
+	// TO DO: all remaining lines in this function goes into a separate function; ...historyFileFromGDrive is done once promise is resolved
+	console.log("out of callback");
+	console.log(allData);
+	console.log("allData: " + allData + ", allData[0]: " + allData);
+	console.log(allData[0]);
 
-		//PROCESS DATA
-	})
-		//data = JSON.parse(datastring)
+	//for each of the history files
+	//assign task_data and trial_data 
+	for (i = 0; i < filepaths.length; i++)  {
 		//parameters
 		task_data = datastring[2];
 		//performance based past data
 		trial_data = datastring[3];
+
+
+		console.log(task_data);
+		console.log(trial_data);
+	
+		//for each iteration 
 
 		var numTRIALs = trial_data.Response.length; 
 		// Iterate over TRIALs
@@ -197,12 +316,17 @@ function readTrialHistoryFromGDrive(filepaths){
 			trialhistory.starttime.push(starttime)
 			
 		}
-	}
+	
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
 
+
+	}	
+
 	return trialhistory;
- 
-}
+
+	}
+
+
 
 
 function computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects){
