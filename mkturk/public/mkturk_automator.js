@@ -265,9 +265,9 @@ async function readTrialHistoryFromGDrive(filepaths){
 			console.log("length of array is " + allData.length);
 			for (i = 0; i < allData.length + 1; i++)  {
 				//parameters
-				task_data = datastring[2];
+				task_data = allData[i][2];
 				//performance based past data
-				trial_data = datastring[3];
+				trial_data = allData[i][3];
 				console.log(task_data);
 				console.log(trial_data);
 
@@ -275,7 +275,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 		});
 
-	return trialhistory;
+	return trialhistory
 }
 
 
