@@ -145,14 +145,13 @@ var resolveFunc;
 
 //TO DO: all data files wrapped in same callback function, said callback called only once below
 function trialhistory_callback(data)  {
-	console.log("we're at callback1");
-	console.log(iterator);
+	console.log("fetching data from callback");
 	allData.push(data);
 	value = iterator.next();
 	if (value.done) {
 		resolveFunc(allData);
 	}
-	
+
 }	
 
 //generator test
@@ -183,18 +182,7 @@ function *getAllTextFileData(list)  {
 
 
 async function readTrialHistoryFromGDrive(filepaths){
-	p = new Promise(
-		function(resolve,reject){
-			resolveFunc = resolve;
-		}).then(
-			function(data)  {
-			console.log("out of callback");
-			console.log(allData);
-			console.log(allData);
-			console.log(allData[0][0].Subject);
-			}
 
-		);
 
 	var trialhistory = {}
 	trialhistory.trainingstage = []
@@ -216,7 +204,6 @@ async function readTrialHistoryFromGDrive(filepaths){
 	filepaths.sort();
 
 	console.log(filepaths);
-
 
 	//Iterator that pauses control flow at yields 
 	iterator = getAllTextFileData(filepaths);
@@ -264,9 +251,31 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 	}
 	*/	
+	p = new Promise(
+		function(resolve,reject){
+			resolveFunc = resolve;
+		}).then(
+			function(data)  {
+			console.log("out of callback");
+			console.log(allData);
+			//console.log(allData);
+			//console.log(allData[0][0].Subject);
+			//for each history data file, that is, 
+			// 
+			console.log("length of array is " + allData.length);
+			for (i = 0; i < allData.length + 1; i++)  {
+				//parameters
+				task_data = datastring[2];
+				//performance based past data
+				trial_data = datastring[3];
+				console.log(task_data);
+				console.log(trial_data);
+
+			}
+
+		});
 
 	return trialhistory;
-
 }
 
 
