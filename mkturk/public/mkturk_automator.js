@@ -157,28 +157,6 @@ function trialhistory_callback(data)  {
 	*/
 }	
 
-function trialhistory_callback2(data)  {
-	console.log("we're at callback2");
-	allData.push(data);
-}
-
-function trialhistory_callback3(data)  {
-	console.log("we're at callback3");
-	allData.push(data);
-}
-
-function trialhistory_callback4(data)  {
-	console.log("we're at callback4");
-	allData.push(data);
-}
-
-function trialhistory_callback5(data)  {
-	console.log("we're at callback5");
-	allData.push(data);
-}
-
-
-
 //generator test
 function *getAllTextFileData(list)  {
 
@@ -198,50 +176,6 @@ function *getAllTextFileData(list)  {
 		yield i;
 	}
 
-	/*
-		
-		
-
-		let content_2 = yield downloadFile(list[1]).then(function(data){
-			$.ajax({
-			  type: 'GET',
-			  url: data.result.webContentLink,
-			  dataType: 'jsonp',
-			  cache: false
-			});
-
-		});
-
-		let content_3 = yield downloadFile(list[2]).then(function(data){
-			$.ajax({
-			  type: 'GET',
-			  url: data.result.webContentLink,
-			  dataType: 'jsonp',
-			  cache: false
-			});
-
-		});
-
-		let content_4 = yield downloadFile(list[3]).then(function(data){
-			$.ajax({
-			  type: 'GET',
-			  url: data.result.webContentLink,
-			  dataType: 'jsonp',
-			  cache: false
-			});
-
-		});
-
-		let content_5 = yield downloadFile(list[4]).then(function(data){
-			$.ajax({
-			  type: 'GET',
-			  url: data.result.webContentLink,
-			  dataType: 'jsonp',
-			  cache: false
-			});
-		});
-		*/
-
 }
 
 
@@ -251,7 +185,14 @@ function *getAllTextFileData(list)  {
 
 
 async function readTrialHistoryFromGDrive(filepaths){
-	
+	p = new Promise(
+		function(resolve,reject){
+			resolveFunc = resolve;
+		}).then(
+		function(resolveval){
+			console.log('User selected ' + resolveval)
+		});
+
 	var trialhistory = {}
 	trialhistory.trainingstage = []
 	trialhistory.starttime = []
@@ -274,7 +215,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 	console.log(filepaths);
 
 
-	//Iterator that pauses the program at yields 
+	//Iterator that pauses control flow at yields 
 	iterator = getAllTextFileData(filepaths);
 	iterator.next();
 	value = iterator.next();
@@ -288,6 +229,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 	//for each of the history files
 	//assign task_data and trial_data 
+	/*
 	for (i = 0; i < filepaths.length; i++)  {
 		//parameters
 		task_data = datastring[2];
@@ -320,11 +262,12 @@ async function readTrialHistoryFromGDrive(filepaths){
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
 
 
-	}	
+	}
+	*/	
 
 	return trialhistory;
 
-	}
+}
 
 
 
