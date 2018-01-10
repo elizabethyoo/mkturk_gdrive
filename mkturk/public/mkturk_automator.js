@@ -187,11 +187,14 @@ async function readTrialHistoryFromGDrive(filepaths){
 		function(resolve,reject){
 			resolveFunc = resolve;
 		}).then(
+			function(data)  {
 			console.log("out of callback");
 			console.log(allData);
 			console.log(allData);
-			console.log(allData[0].Subject);
-		});
+			console.log(allData[0][0].Subject);
+			}
+
+		);
 
 	var trialhistory = {}
 	trialhistory.trainingstage = []
