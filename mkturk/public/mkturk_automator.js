@@ -133,13 +133,27 @@ function stageHash(task){
 var allData = [];
 
 
+var iterator;
+var resolveFunc;
+//TO DO IN GOOGLEDRIVE.JS: sort file paths chronologically by name not id s.t. we have 5 most recent data files 
+
+//TO DO: define promise whose resolveFunc is resolve --> resolve will later becalled in the last callback function 
+
 
 //locate 5 most recent files and wrap them in callbacks --> make wrapper 
 
-
+//TO DO: all data files wrapped in same callback function, said callback called only once below
 function trialhistory_callback(data)  {
 	console.log("we're at callback1");
+	console.log(iterator);
 	allData.push(data);
+	//value = iterator.next();
+	//TO DO: Uncomment 
+	/*
+	if (value.done) {
+		resolveFunc(allData);
+	}
+	*/
 }	
 
 function trialhistory_callback2(data)  {
@@ -168,8 +182,10 @@ function trialhistory_callback5(data)  {
 function *getAllTextFileData(list)  {
 
 	console.log(list.length);
-		
-		let content = yield downloadFile(list[0]).then(function(data){
+
+	for (i = 0; i < list.length; i++) {
+		let content = "bla"
+		downloadFile(list[i]).then(function(data){
 			$.ajax({
 			  type: 'GET',
 			  url: data.result.webContentLink,
@@ -177,6 +193,13 @@ function *getAllTextFileData(list)  {
 			  cache: false
 			});
 		});
+		console.log("content: " + i);
+		yield i;
+	}
+
+	/*
+		
+		
 
 		let content_2 = yield downloadFile(list[1]).then(function(data){
 			$.ajax({
@@ -216,6 +239,7 @@ function *getAllTextFileData(list)  {
 			  cache: false
 			});
 		});
+		*/
 
 }
 
@@ -250,17 +274,16 @@ async function readTrialHistoryFromGDrive(filepaths){
 
 
 	//Iterator that pauses the program at yields 
-	let iterator = getAllTextFileData(filepaths);
+	iterator = getAllTextFileData(filepaths);
 	iterator.next();
-	for (i = 0; i < 4 ; i++)  {
-		console.log(i + " get data of: " + filepaths[i]);
-		console.log(iterator.next().value);	
+	value = iterator.next();
+	
 
-	}
-	//iterator.next();
-
+	// TO DO: all remaining lines in this function goes into a separate function; ...historyFileFromGDrive is done once promise is resolved
 	console.log("out of callback");
 	console.log(allData);
+	console.log("allData: " + allData + ", allData[0]: " + allData);
+	console.log(allData[0]);
 
 	//for each of the history files
 	//assign task_data and trial_data 
