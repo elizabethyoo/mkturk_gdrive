@@ -148,13 +148,11 @@ function trialhistory_callback(data)  {
 	console.log("we're at callback1");
 	console.log(iterator);
 	allData.push(data);
-	//value = iterator.next();
-	//TO DO: Uncomment 
-	/*
+	value = iterator.next();
 	if (value.done) {
 		resolveFunc(allData);
 	}
-	*/
+	
 }	
 
 //generator test
@@ -189,8 +187,10 @@ async function readTrialHistoryFromGDrive(filepaths){
 		function(resolve,reject){
 			resolveFunc = resolve;
 		}).then(
-		function(resolveval){
-			console.log('User selected ' + resolveval)
+			console.log("out of callback");
+			console.log(allData);
+			console.log(allData);
+			console.log(allData[0].Subject);
 		});
 
 	var trialhistory = {}
@@ -222,10 +222,7 @@ async function readTrialHistoryFromGDrive(filepaths){
 	
 
 	// TO DO: all remaining lines in this function goes into a separate function; ...historyFileFromGDrive is done once promise is resolved
-	console.log("out of callback");
-	console.log(allData);
-	console.log("allData: " + allData + ", allData[0]: " + allData);
-	console.log(allData[0]);
+	
 
 	//for each of the history files
 	//assign task_data and trial_data 
