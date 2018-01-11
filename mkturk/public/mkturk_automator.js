@@ -162,9 +162,9 @@ function *getAllTextFileData(list)  {
 	}
 }
 
-async function getTrialHistoryFromGDrive(filepaths){
+async function getTrialHistoryFromGDrive(filepaths)  {
 	// trialhistory: [oldest TRIALs... most recent TRIALs]
-	
+
 	//why is this necessary? 
 	if (typeof filepaths == "string"){	
 		filepaths = [filepaths]
@@ -189,25 +189,23 @@ async function getTrialHistoryFromGDrive(filepaths){
 }
 
 function readTrialHistory(raw_data)  {
-
+	console.log(raw_data);
 	var trialhistory = {};
 	trialhistory.trainingstage = [];
 	trialhistory.starttime = [];
 	trialhistory.response = [];
 	trialhistory.correct = [];
 	
-	for (i = 0; i < filepaths.length; i++)  {
+	for (i = 0; i < raw_data.length; i++)  {
 		//parameters
-		task_data = datastring[2];
+		task_data = raw_data[i][2];
 		//performance based past data
-		trial_data = datastring[3];
-
+		trial_data = raw_data[i][3];
 
 		console.log(task_data);
 		console.log(trial_data);
 	
 		//for each iteration 
-
 		var numTRIALs = trial_data.Response.length; 
 		// Iterate over TRIALs
 		for (var i_trial = 0; i_trial<numTRIALs; i_trial++){
@@ -221,18 +219,15 @@ function readTrialHistory(raw_data)  {
 
 			// Start time (fixation dot appears) of trial 
 			var starttime = trial_data.StartTime[i_trial]
-			trialhistory.starttime.push(starttime)
-			
+			trialhistory.starttime.push(starttime)	
 		}
 	
-	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
+	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', raw_data.length, ' datafiles.')
 
-	console.log(raw_data);
+	console.log(trialhistory);
 	return trialhistory;
-
-	
+	}
 }
-
 
 
 
@@ -304,6 +299,7 @@ function computeRunningHistory(mintrials, current_stage, history_trainingstage, 
 		
 		ntrial++;
 	}
+
 	pctcorrect = 100 * ncorrect/ntrial;
 	return [pctcorrect, ntrial]
 }
