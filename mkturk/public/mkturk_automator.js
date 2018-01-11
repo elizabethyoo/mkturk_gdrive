@@ -136,6 +136,7 @@ var allData = [];
 
 var iterator;
 var resolveFunc;
+var errFunc;
 //TO DO IN GOOGLEDRIVE.JS: sort file paths chronologically by name not id s.t. we have 5 most recent data files 
 
 //TO DO: define promise whose resolveFunc is resolve --> resolve will later becalled in the last callback function 
@@ -151,7 +152,6 @@ function trialhistory_callback(data)  {
 	if (value.done) {
 		resolveFunc(allData);
 	}
-
 }	
 
 //generator test
@@ -176,20 +176,11 @@ function *getAllTextFileData(list)  {
 }
 
 
-
-
 //let secondYield = iterator.next();
 
 
-async function readTrialHistoryFromGDrive(filepaths){
+async function getTrialHistoryFromGDrive(filepaths){
 
-
-	var trialhistory = {}
-	trialhistory.trainingstage = []
-	trialhistory.starttime = []
-	trialhistory.response = []
-	trialhistory.correct = []
-	
 	//why is this necessary? 
 	if (typeof filepaths == "string"){
 		
@@ -248,45 +239,34 @@ async function readTrialHistoryFromGDrive(filepaths){
 	
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
 
-
 	}
 	*/	
 	p = new Promise(
-		function(resolve,reject){
+		function(resolve,reject)  {
 			resolveFunc = resolve;
+			errFunc = reject; 
 		}).then(
 			function(data)  {
-			console.log("out of callback");
-			console.log(allData);
-			//console.log(allData);
-			//console.log(allData[0][0].Subject);
-			//for each history data file, that is, 
-			// 
-			console.log("length of array is " + allData.length);
-
-
-
-			/*
-			for (i = 0; i < allData.length + 1; i++)  {
-				//parameters
-				task_data = allData[i][2];
-				//performance based past data
-				trial_data = allData[i][3];
-				console.log(task_data);
-				console.log(trial_data);
-
-			}
-			*/
-
+			console.log("out of last callback");
 		});
 
-	return trialhistory
+	return allData;
 }
-/*
-function readTrialHistoryFromGDrive()  {
 
+function readTrialHistory(raw_data)  {
+
+	var trialhistory = {};
+	trialhistory.trainingstage = [];
+	trialhistory.starttime = [];
+	trialhistory.response = [];
+	trialhistory.correct = [];
+
+	console.log(raw_data);
+	return raw_data;
+
+	
 }
-*/ 
+
 
 
 
