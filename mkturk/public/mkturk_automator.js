@@ -129,39 +129,27 @@ function stageHash(task){
 }
 
 
-
-
 var allData = [];
-
-
 var iterator;
 var resolveFunc;
 var errFunc;
 //TO DO IN GOOGLEDRIVE.JS: sort file paths chronologically by name not id s.t. we have 5 most recent data files 
+//TO DO WHEREVER EXPERIMENTAL DATA WILL BE CREATED AND STORED: wrapper function for trialhistory_callback
 
-//TO DO: define promise whose resolveFunc is resolve --> resolve will later becalled in the last callback function 
-
-
-//locate 5 most recent files and wrap them in callbacks --> make wrapper 
-
-//TO DO: all data files wrapped in same callback function, said callback called only once below
 function trialhistory_callback(data)  {
 	console.log("fetching data from callback");
 	allData.push(data);
+	console.log(allData);
 	value = iterator.next();
+	//when the last file's contents finish downloading plug back into main flow of execution
 	if (value.done) {
 		resolveFunc(allData);
 	}
 }	
 
-//generator test
 function *getAllTextFileData(list)  {
-
-	console.log(list.length);
-
 	for (i = 0; i < list.length; i++) {
-		let content = "bla"
-		downloadFile(list[i]).then(function(data){
+			downloadFile(list[i]).then(function(data){
 			$.ajax({
 			  type: 'GET',
 			  url: data.result.webContentLink,
@@ -169,45 +157,45 @@ function *getAllTextFileData(list)  {
 			  cache: false
 			});
 		});
-		console.log("content: " + i);
+		console.log("downloading content of file " + (i + 1));
 		yield i;
 	}
-
 }
 
-
-//let secondYield = iterator.next();
-
-
 async function getTrialHistoryFromGDrive(filepaths){
-
+	// trialhistory: [oldest TRIALs... most recent TRIALs]
+	
 	//why is this necessary? 
-	if (typeof filepaths == "string"){
-		
+	if (typeof filepaths == "string"){	
 		filepaths = [filepaths]
 	}
-	
-	// Sort in ascending order, such that the OLDEST file is FIRST in trialhistory 
-	// trialhistory: [oldest TRIALs... most recent TRIALs]
 
 	//TO DO: get file name or timestamp with file id and then sort chronologically 
 	//currently sorted alphabetically by file id  
 	filepaths.sort();
-
 	console.log(filepaths);
 
 	//Iterator that pauses control flow at yields 
 	iterator = getAllTextFileData(filepaths);
 	iterator.next();
-	value = iterator.next();
 	
+	p = new Promise(
+		function(resolve,reject)  {
+			resolveFunc = resolve;
+			errFunc = reject; 
+		});
 
-	// TO DO: all remaining lines in this function goes into a separate function; ...historyFileFromGDrive is done once promise is resolved
+	return p;		
+}
+
+function readTrialHistory(raw_data)  {
+
+	var trialhistory = {};
+	trialhistory.trainingstage = [];
+	trialhistory.starttime = [];
+	trialhistory.response = [];
+	trialhistory.correct = [];
 	
-
-	//for each of the history files
-	//assign task_data and trial_data 
-	/*
 	for (i = 0; i < filepaths.length; i++)  {
 		//parameters
 		task_data = datastring[2];
@@ -239,30 +227,8 @@ async function getTrialHistoryFromGDrive(filepaths){
 	
 	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', filepaths.length, ' datafiles.')
 
-	}
-	*/	
-	p = new Promise(
-		function(resolve,reject)  {
-			resolveFunc = resolve;
-			errFunc = reject; 
-		}).then(
-			function(data)  {
-			console.log("out of last callback");
-		});
-
-	return allData;
-}
-
-function readTrialHistory(raw_data)  {
-
-	var trialhistory = {};
-	trialhistory.trainingstage = [];
-	trialhistory.starttime = [];
-	trialhistory.response = [];
-	trialhistory.correct = [];
-
 	console.log(raw_data);
-	return raw_data;
+	return trialhistory;
 
 	
 }

@@ -229,14 +229,18 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/'
 	console.log(subject_behavior_save_directory);
 	if (TASK.Automator != 0){
-		var history_file_paths = await getMostRecentBehavioralFilePathsFromGDrive(ndatafiles2read, ENV.Subject, subject_behavior_save_directory)
-		console.log(history_file_paths);
-		trialhistory = await readTrialHistoryFromGDrive(history_file_paths);
-		setTimeout(function() 
-			{console.log(trialhistory);
-			console.log(trialhistory[0]);
+		var history_file_paths = await getMostRecentBehavioralFilePathsFromGDrive(ndatafiles2read, ENV.Subject, subject_behavior_save_directory);
+		
+		trialhistory_data = await getTrialHistoryFromGDrive(history_file_paths);
 
-			}, 3000);
+		//trialhistory = await readTrialHistory(trialhistory_data);
+	
+		console.log(trialhistory_data);
+		//console.log(trialhistory);
+	
+	
+		
+	
 	}
 
 	//===================== AWAIT INITIALIZE AUTOMATOR =================//
