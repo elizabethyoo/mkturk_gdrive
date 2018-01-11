@@ -95,7 +95,7 @@ async function loadParametersfromGDrive(paramfile_path){
 
 }
 
-/*
+
 async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 	// From a JSON.txt of the format: 
 	// [{param:val, param:val}, {param:val, param:val}]
@@ -123,11 +123,9 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 	}
 	return automator_stage_parameters
 }
-*/
+
 
 //Global variable paramsData
-
-
 
 function loadTextFilefromGDrive(textfile_path){
 	//console.log("textfile_id is: " + textfile_path);
