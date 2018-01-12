@@ -239,7 +239,8 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	//===================== AWAIT INITIALIZE AUTOMATOR =================//
 	// Initialize automator - change TASK to that specified by TASK.CurrentAutomatorStage. 
 	if (TASK.Automator != 0){
-		automator_data = await parseAutomatorFilefromDropbox(TASK.AutomatorFilePath) 
+		console.log("TASK.AutomatorFilePath is: " + TASK.AutomatorFilePath);
+		automator_data = await parseAutomatorFilefromGDrive(TASK.AutomatorFilePath) 
 		automateTask(automator_data, trialhistory) 
 		await saveParameterstoDropbox() 
 		await loadParametersfromDropbox(ENV.ParamFileName);
