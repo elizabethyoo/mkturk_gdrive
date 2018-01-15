@@ -81,6 +81,7 @@ async function loadParametersfromGDrive(paramfile_path){
 
 		TASK = {};
 		TASK = datastring;
+		console.log(datastring);
 		console.log(TASK);
 		ENV.ParamFileName = datastring.path_display; 
 		ENV.ParamFileRev = datastring.rev;

@@ -10,7 +10,6 @@ async function automateTask(automator_data, trialhistory){
 	// ---------- IF THERE ARE DISCREPANCIES, SET TRIAL.STUFF TO AUTOMATOR DATA [ CURRENT_STAGE ] ---------- 
 	// Check for consistency between automator_data[current_stage] and trial.stuff: 
 	// i_current_stage is the master; the ground truth for what trial.stuff should be. 
-
 	var i_current_stage = TASK.CurrentAutomatorStage; 
 	var current_stage = stageHash(TASK); 
 	var automator_eventstring = []
@@ -111,7 +110,6 @@ updateHeadsUpDisplayAutomator(ENV.CurrentAutomatorStageName,pctcorrect,ntrials,E
 	return 
 }
 
-
 function stageHash(task){
 	// Returns a value that uniquely describes the automator and stage of the automator
 	var current_stage_hash_string = ''
@@ -128,14 +126,12 @@ function stageHash(task){
 	// Todo: decide whether to count trials which have TASK that is consistent with an automator stage, as being part of that stage
 }
 
-
 var allData = [];
 var iterator;
 var resolveFunc;
 var errFunc;
 //TO DO IN GOOGLEDRIVE.JS: sort file paths chronologically by name not id s.t. we have 5 most recent data files 
 //TO DO WHEREVER EXPERIMENTAL DATA WILL BE CREATED AND STORED: wrapper function for trialhistory_callback
-
 function trialhistory_callback(data)  {
 	console.log("fetching data from callback");
 	allData.push(data);
@@ -228,8 +224,6 @@ function readTrialHistory(raw_data)  {
 	return trialhistory;
 	}
 }
-
-
 
 function computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects){
 	// todo: 
