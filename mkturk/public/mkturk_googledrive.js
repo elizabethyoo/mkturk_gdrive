@@ -154,6 +154,7 @@ function loadTextFilefromGDrive(textfile_path){
 function jsonp_callback(data) {
 	console.log(data);
 	console.log(typeof data);
+	TASK = data;
 	 var data_blob = new Blob([JSON.stringify(data)], {type : "text/plain"});
 	 var reader = new FileReader();
 	 reader.onload = function(e)  {

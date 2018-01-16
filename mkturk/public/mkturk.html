@@ -229,7 +229,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	var subject_behavior_save_directory = DATA_SAVEPATH + ENV.Subject + '/'
 	console.log(subject_behavior_save_directory);
 	console.log(TASK);
-	console.log(TASK.automator);
+	console.log(TASK.Automator);
 
 	if (TASK.Automator != 0){
 		var history_file_paths = await getMostRecentBehavioralFilePathsFromGDrive(ndatafiles2read, ENV.Subject, subject_behavior_save_directory);
