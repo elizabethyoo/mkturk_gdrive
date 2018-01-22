@@ -42,12 +42,6 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 
 }
 
-//Return the ID of a folder given its path
-function convertPathToId(path)  {
-
-	return 0;
-}
-
 /**
  * Retrieve a list of files belonging to a folder.
  *
@@ -213,7 +207,31 @@ function searchFileByName(name) {
    
 }
 
-//Searches Drive by folder name, returns a list of matchigng folders  
+//intermediary function for nameToId
+async function nameToGDriveFile(name)  {
+	p = new Promise(
+	function(resolve,reject)  {
+		resolveFunc = resolve;
+		errFunc = reject; 
+	});
+	
+	var matches = searchFileByName(name);
+	resolveFunc(matches);
+
+	return p;
+}
+
+//Takes an array of file/folder names and returns an array of corresponding file ids 
+async function nameToId(listOfNames)  {
+	var idList = []; 
+	for (i = 0; i < listOfNames.length; i++)  {
+		var data = await nameToGDriveFile(listOfNames[i]);
+		idList[i] = data.result.files[0].id;
+	}	
+	return idList;
+}
+
+//Searches Drive by folder name, returns a list of matching folders  
 function searchFolderByName(name) {
     return gapi.client.drive.files.list({
       "q": "mimeType = 'application/vnd.google-apps.folder' and name = '" + name + "'"
@@ -241,36 +259,7 @@ async function pathToId(path)  {
 	return folderList.result.files[0].id;
 }
 
-/**
- * Retrieve a list of files belonging to a folder.
- *
- * @param {String} folderId ID of the folder to retrieve files from.
- * @param {Function} callback Function to call when the request is complete.
- *
- */
- /*
-function retrieveAllFilesInFolder(folderId, callback) {
-  var retrievePageOfChildren = function(request, result) {
-    request.execute(function(resp) {
-      result = result.concat(resp.items);
-      var nextPageToken = resp.nextPageToken;
-      if (nextPageToken) {
-        request = gapi.client.drive.children.list({
-          'folderId' : folderId,
-          'pageToken': nextPageToken
-        });
-        retrievePageOfChildren(request, result);
-      } else {
-        callback(result);
-      }
-    });
-  }
-  var initialRequest = gapi.client.drive.children.list({
-      'folderId' : folderId
-    });
-  retrievePageOfChildren(initialRequest, []);
-}
-*/
+
 
 
 

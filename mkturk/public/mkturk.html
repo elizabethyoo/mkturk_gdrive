@@ -271,6 +271,10 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	} //if automator
 
 	//============= AWAIT LOAD SOUNDS =============//
+	
+	var soundtest = await nameToId(['au0', 'au1', 'au2', 'au3', 'au4', 'au5']);
+	console.log(soundtest);
+
 	soundpromises = sounds.serial.map(loadSoundfromDropbox2); //create array of sound load Promises
 	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
 	updateStatusText("")
