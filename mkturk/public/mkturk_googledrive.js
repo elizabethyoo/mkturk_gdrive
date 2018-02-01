@@ -6,16 +6,12 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 	try{
 
 		var folderId = await pathToId(save_directory);
-		//console.log(folderId);
-		//TO DO: method for converting folder path to folder ID 
 
 		console.log(folderId);
 
 		response = await retrieveAllFilesInFolder(folderId);
 		console.log("Success: read directory "+ save_directory);
-		console.log(response);
-
-		//TO DO 1: response needs to be sorted before file ids are extracted 
+		console.log("MostRecentBehavioralFiles", response);
 		
 		var q2=0;
 		for (var q = 0; q <= response.result.files.length-1; q++){
@@ -51,7 +47,10 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
  */
 function retrieveAllFilesInFolder(folderId, callback) {
   return gapi.client.drive.files.list({
+        //search inside folder with given folderId
         'q' : "parents in '" + folderId + "'",
+        //sort chronololgically (titles of history files are published dates)
+        'orderBy': "name",
     }).then(function(response) {
       	// Handle the results here (response.result has the parsed body).
       	//console.log("Response", response);
@@ -170,9 +169,6 @@ function generate_wrapper(data) {
 	return "jsonp_callback{ " + " }";
 }
 
-
-
-
 //Googledrive functions 
 //Downloads file whose fileId is provided 
 function downloadFile(fileId) {
@@ -199,7 +195,11 @@ function searchFileByName(name) {
 	
     	.then(function(response) {
       	// Handle the results here (response.result has the parsed body).
-      	//console.log("Response", response);
+      	var sorted = [];
+      	console.log("Response", response);
+
+      	console.log(response.result.files);
+
       	return response
     	}, function(error) {
       	console.error("Execute error", error);
@@ -225,9 +225,25 @@ async function nameToGDriveFile(name)  {
 async function nameToId(listOfNames)  {
 	var idList = []; 
 	for (i = 0; i < listOfNames.length; i++)  {
-		var data = await nameToGDriveFile(listOfNames[i]);
-		idList[i] = data.result.files[0].id;
-	}	
+		var data = await gapi.client.drive.files.list({
+  		"q": "name contains '" + listOfNames[i] + "'"
+})
+		console.log(data);
+		console.log("await is done");
+		//sort data by date, obtained from metadata
+
+
+    	//.then(function(response) {
+      	// Handle the results here (response.result has the parsed body).
+      	//console.log("Response", response);
+      	//return response
+    	//}, function(error) {
+      	//console.error("Execute error", error);
+      	idList[i] = data.result.files[0].id;
+    }
+    //);;
+		
+	//}	
 	return idList;
 }
 
@@ -238,14 +254,12 @@ function searchFolderByName(name) {
     })
         .then(function(response) {
           // Handle the results here (response.result has the parsed body)
-        
           return response;
-       
         }, function(error) {
           console.error("Execute error", error);
         });
   }
-
+ 
 
 //Takes a folder path and returns the corresponding folder's folder ID
 async function pathToId(path)  {
