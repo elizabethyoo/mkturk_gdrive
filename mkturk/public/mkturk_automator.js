@@ -153,7 +153,7 @@ function *getAllTextFileData(list)  {
 			  cache: false
 			});
 		});
-		
+
 		console.log("downloading content of file " + (i + 1));
 		yield i;
 	}
@@ -216,7 +216,9 @@ function readTrialHistory(raw_data)  {
 			trialhistory.starttime.push(starttime)	
 		}
 	
-	console.log('Read '+trialhistory.trainingstage.length+' past trials from ', raw_data.length, ' datafiles.')
+	console.log(trialhistory.trainingstage);
+	console.log(raw_data);
+	console.log('Read '+ trialhistory.trainingstage.length +' past trials from ' + raw_data.length + ' datafiles.')
 
 	console.log(trialhistory);
 	return trialhistory;
