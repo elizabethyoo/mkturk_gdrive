@@ -164,10 +164,7 @@ function jsonp_callback(data) {
 
 }
 
-//wraps data s.t. it can be saved in JSONP format 
-function generate_wrapper(data) {
-	return "jsonp_callback{ " + " }";
-}
+
 
 //Googledrive functions 
 //Downloads file whose fileId is provided 
@@ -178,7 +175,10 @@ function downloadFile(fileId) {
       "fields": "*"
     })
   }
-
+//wraps data s.t. it can be saved in JSONP format 
+function generate_wrapper(data) {
+	return "jsonp_callback{ " + " }";
+}
 /*
 .then(function(response) {
           // Handle the results here (response.result has the parsed body).
@@ -271,6 +271,25 @@ async function pathToId(path)  {
 	console.log("folder: " , folder);
 	
 	return folder.result.files[0].id;
+}
+
+//================== LOAD AUDIO ==================//
+function loadSoundfromGDrive(src,idx){
+	return new Promise(function(resolve,reject){
+		dbx.filesDownload({path: SOUND_FILEPREFIX + src + ".wav"}).then(function(data){
+		var reader = new FileReader()
+		reader.onload = function(e){
+			audiocontext.decodeAudioData(reader.result).then(function(buffer){
+				sounds.buffer[idx] = buffer;
+				resolve(idx)
+			})
+		}
+		reader.readAsArrayBuffer(data.fileBlob)
+	})
+	.catch(function(error){
+		console.error(error)
+	})
+	})
 }
 
 
