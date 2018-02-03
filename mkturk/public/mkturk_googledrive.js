@@ -177,7 +177,7 @@ function downloadFile(fileId) {
   }
 //wraps data s.t. it can be saved in JSONP format 
 function generate_wrapper(data) {
-	return "jsonp_callback{ " + " }";
+	return "jsonp_callback( " + " )";
 }
 /*
 .then(function(response) {
