@@ -231,6 +231,9 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	console.log(TASK);
 	console.log(TASK.Automator);
 
+	//Remove when getMostRecentBehavioralFilePathsFromGDrive is fixed
+	TASK.Automator = 1;
+
 	if (TASK.Automator != 0){
 		var history_file_paths = await getMostRecentBehavioralFilePathsFromGDrive(ndatafiles2read, ENV.Subject, subject_behavior_save_directory);
 		

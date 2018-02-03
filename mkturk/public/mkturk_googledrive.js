@@ -15,16 +15,16 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
 		
 		var q2=0;
 		for (var q = 0; q <= response.result.files.length-1; q++){
-			file_list[q2] = response.result.files[q].id;
+			file_list[q2] = response.result.files[response.result.files.length-1-q].id;
 			q2++;
 		}
 
-		console.log(file_list);
+		console.log("file_list: ", file_list);
 
 		//TO DO 2: replace, see TO DO 1. 
 		// [oldest,...,most recent]
-		file_list.sort();
-
+		//file_list.sort();
+		console.log("num " , num_files_to_get);
 
 		// Return most recent files 
 		num_files = file_list.length
@@ -265,12 +265,12 @@ function searchFolderByName(name) {
 async function pathToId(path)  {
 	var components = path.split("/");
 	var folderName = components[components.length-2];
-	var folderList = await searchFolderByName(folderName);
+	var folder = await searchFolderByName(folderName);
 	//folderList.result.file[0].id; 
 
-	console.log(folderList);
+	console.log("folder: " , folder);
 	
-	return folderList.result.files[0].id;
+	return folder.result.files[0].id;
 }
 
 

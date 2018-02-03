@@ -153,6 +153,7 @@ function *getAllTextFileData(list)  {
 			  cache: false
 			});
 		});
+		
 		console.log("downloading content of file " + (i + 1));
 		yield i;
 	}
@@ -166,9 +167,6 @@ async function getTrialHistoryFromGDrive(filepaths)  {
 		filepaths = [filepaths]
 	}
 
-	//TO DO: get file name or timestamp with file id and then sort chronologically 
-	//currently sorted alphabetically by file id  
-	filepaths.sort();
 	console.log(filepaths);
 
 	//Iterator that pauses control flow at yields 
