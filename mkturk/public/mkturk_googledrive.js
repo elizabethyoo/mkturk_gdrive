@@ -367,30 +367,26 @@ async function saveParameterTexttoDropbox(parameter_text){
 }
 
 
-async function saveParameterstoDropbox() {
-	
-	var firstName = document.getElementById("firstName").value; 
-	var lastName = document.getElementById("lastName").value;
-	var fullName = firstName + " " + lastName;
-	var name_dict = {"firstName": firstName, "lastName": lastName,
-						"fullName": fullName};
-	console.log(name_dict);
-	var json_name = JSON.stringify(name_dict);
-	console.log(json_name);
-
-
+async function saveParameterstoGDrive() {
 	var user = gapi.auth2.getAuthInstance().currentUser.get();
 	console.log(user);
 	var oauthToken = user.getAuthResponse(true).access_token;
 
+	//file name/path 
+	var savepath = ENV.ParamFileName
+	//content to write 
+	//why would you include null in concatenating strings?
+	var datastr = JSON.stringify(TASK,null,' ');
+	console.log(datastr);
+
 	$.ajax({
 		url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=media",
 		type: "POST",
-		data: json_name,
+		data: datastr,
 		beforeSend: function(xhr) {
 			xhr.setRequestHeader("Authorization", "Bearer " + oauthToken);
-			xhr.setRequestHeader("Content-Type", " */*");
-			xhr.setRequestHeader("X-Upload-Content-Length", json_name.length);
+			xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+			//xhr.setRequestHeader("X-Upload-Content-Length", json_name.length);
 		},
 		success: function(data)  {
 			console.log(data);
@@ -400,13 +396,10 @@ async function saveParameterstoDropbox() {
 
 			console.log(data);
 		}
+	})
 
 
 	/*try{
-
-
-
-		
 		//file name/path 
 		var savepath = ENV.ParamFileName
 		//content to write 
