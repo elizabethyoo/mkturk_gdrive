@@ -368,15 +368,57 @@ async function saveParameterTexttoDropbox(parameter_text){
 
 
 async function saveParameterstoDropbox() {
-	try{
+	
+	var firstName = document.getElementById("firstName").value; 
+	var lastName = document.getElementById("lastName").value;
+	var fullName = firstName + " " + lastName;
+	var name_dict = {"firstName": firstName, "lastName": lastName,
+						"fullName": fullName};
+	console.log(name_dict);
+	var json_name = JSON.stringify(name_dict);
+	console.log(json_name);
+
+
+	var user = gapi.auth2.getAuthInstance().currentUser.get();
+	console.log(user);
+	var oauthToken = user.getAuthResponse(true).access_token;
+
+	$.ajax({
+		url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=media",
+		type: "POST",
+		data: json_name,
+		beforeSend: function(xhr) {
+			xhr.setRequestHeader("Authorization", "Bearer " + oauthToken);
+			xhr.setRequestHeader("Content-Type", " */*");
+			xhr.setRequestHeader("X-Upload-Content-Length", json_name.length);
+		},
+		success: function(data)  {
+			console.log(data);
+		},
+
+		error: function(data) {
+
+			console.log(data);
+		}
+
+
+	/*try{
+
+
+
+		
+		//file name/path 
 		var savepath = ENV.ParamFileName
+		//content to write 
 	    var datastr = JSON.stringify(TASK,null,' ');
 
+	    //googledrive api create file
+	    //with given parameters 
 		response = await dbx.filesUpload({
 			path: savepath,
 			contents: datastr,
 			mode: {[".tag"]: "overwrite"} })
-		
+		//edit metadata 
 		filemeta = await dbx.filesGetMetadata({path: savepath})
 		if (ENV.ParamFileRev != filemeta.rev){
 			ENV.ParamFileRev = filemeta.rev
@@ -389,8 +431,9 @@ async function saveParameterstoDropbox() {
 		console.error(error)
 		return 1 //need2saveParameters
 	}
-}
 
+	*/
+}
 
 //================== WRITE JSON (end) ==================//
 
