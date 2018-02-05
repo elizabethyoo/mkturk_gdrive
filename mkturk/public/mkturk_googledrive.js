@@ -96,16 +96,14 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 
 	// Returns an array of identical format
 	console.log("parseAutomatorFilefromGDrive is running");
-	console.log(jsontxt_filepath); 
-
-	var datastring = await loadTextFilefromGDrive(jsontxt_filepath)
-
-	data = JSON.parse(datastring);
-	return data
+	var jsontxt_fileid = await pathToId(jsontxt_filepath);
+	var data = await loadTextFilefromGDrive(jsontxt_fileid);
+	return data;
 
 	// Not being used, but maybe if you want to iterate over individual parameters
 	// e.g. to check that certain parameters are present; and to set defaults otherwise 
 	// e.g. to ensure consistency between fieldnames and TRIAL.[stuff]
+	/*
 	automator_stage_parameters = []
 	for (var i = 0; i<data.length; i++){
 		automator_stage_parameters[i] = []
@@ -116,12 +114,13 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 		}
 	}
 	return automator_stage_parameters
+	*/
 }
 
 
 //Global variable paramsData
 
-function loadTextFilefromGDrive(textfile_path){
+function loadTextFilefromGDrive(textfile_path){ 
 	//console.log("textfile_id is: " + textfile_path);
 	console.log(textfile_path);
 
@@ -293,6 +292,107 @@ function loadSoundfromGDrive(src,idx){
 }
 
 
+
+//================== WRITE JSON ==================//
+async function saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL){
+	try{
+        var dataobj = [] 
+
+		dataobj.push(ENV)
+		dataobj.push(CANVAS)
+		dataobj.push(TASK)
+		dataobj.push(TRIAL)
+		datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
+
+		// TODO: 
+		// Check if folder ENV.DataFileName exists 
+		// If not, create it for this subjectID using dbx.filesCreateFolder (see: http://dropbox.github.io/dropbox-sdk-js/Dropbox.html#filesCreateFolder__anchor)
+
+		response = await dbx.filesUpload({
+			path: ENV.DataFileName,
+			contents: datastr,
+			mode: {[".tag"]: "overwrite"} })
+			CURRTRIAL.lastDropboxSave = new Date(response.client_modified)
+			console.log("Successful behavior file upload. Size:" + response.size)
+		}
+	catch(error){
+		console.error(error)
+	}
+}
+
+async function saveParameterTexttoDropbox(parameter_text){
+	try{
+	    datastr = parameter_text
+
+	    var success = false 
+	    var i = 1; 
+	    var timeout_seed =  1000; 
+	    var max_retries = 10; 
+
+	    while(!success && i < max_retries){
+	    	try{
+				response = await dbx.filesUpload({
+					path: ENV.ParamFileName,
+					contents: datastr,
+					mode: {[".tag"]: "overwrite"} })
+						console.log("Successful parameter text upload. Size: " + response.size)
+						FLAGS.need2saveParameters = 0;
+			}
+			catch(error){
+				console.log(error)
+				console.log('Trying to write in '+(timeout_seed*i)+'ms...on try '+ i)
+				sleep(timeout_seed * i)
+				i++
+				continue; 
+			}
+			success = true
+		}
+	}
+	catch (error){
+		console.error(error)
+	}
+
+	try{
+		filemeta = await dbx.filesGetMetadata({path: ENV.ParamFileName})
+			if (ENV.ParamFileRev != filemeta.rev){
+				ENV.ParamFileRev = filemeta.rev
+				ENV.ParamFileDate = new Date(filemeta.client_modified)
+
+				console.log('Parameter file was updated. Rev=' + ENV.ParamFileRev)
+			}
+	}
+	catch(error) {
+		console.error(error)
+	}
+}
+
+
+async function saveParameterstoDropbox() {
+	try{
+		var savepath = ENV.ParamFileName
+	    var datastr = JSON.stringify(TASK,null,' ');
+
+		response = await dbx.filesUpload({
+			path: savepath,
+			contents: datastr,
+			mode: {[".tag"]: "overwrite"} })
+		
+		filemeta = await dbx.filesGetMetadata({path: savepath})
+		if (ENV.ParamFileRev != filemeta.rev){
+			ENV.ParamFileRev = filemeta.rev
+			ENV.ParamFileDate = new Date(filemeta.client_modified)	
+		}
+		console.log("TASK written to disk as "+ENV.ParamFileName+". Size: " + response.size)
+		return 0; //need2saveParameters
+	}
+	catch (error){
+		console.error(error)
+		return 1 //need2saveParameters
+	}
+}
+
+
+//================== WRITE JSON (end) ==================//
 
 
 
