@@ -183,7 +183,8 @@ async function getTrialHistoryFromGDrive(filepaths)  {
 }
 
 function readTrialHistory(raw_data)  {
-	console.log(raw_data);
+	console.log("RAW_DATA");
+	console.log(raw_data)
 	var trialhistory = {};
 	trialhistory.trainingstage = [];
 	trialhistory.starttime = [];
@@ -216,13 +217,14 @@ function readTrialHistory(raw_data)  {
 			trialhistory.starttime.push(starttime)	
 		}
 	
-	console.log(trialhistory.trainingstage);
+	
+	}
+console.log(trialhistory.trainingstage);
 	console.log(raw_data);
 	console.log('Read '+ trialhistory.trainingstage.length +' past trials from ' + raw_data.length + ' datafiles.')
 
 	console.log(trialhistory);
-	return trialhistory;
-	}
+	return trialhistory;	
 }
 
 function computeRunningHistory(mintrials, current_stage, history_trainingstage, history_corrects){
