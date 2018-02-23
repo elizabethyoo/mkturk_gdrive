@@ -63,22 +63,25 @@ function retrieveAllFilesInFolder(folderId, callback) {
 
 //================== LOAD JSON ==================//
 async function loadParametersfromGDrive(paramfile_path){
-	//console.log("paramfile_path is: " + paramfile_path);
+	console.log("paramfile_path is: " + paramfile_path);
 
 	var response = await searchFileByName(paramfile_path);
 	var paramfile_id = response.result.files[0].id;
 
 	try{ 
-		datastring = await loadTextFilefromGDrive(paramfile_id);
+		data_obj = await new_downloadFile(paramfile_id);
+		metadata = data_obj.metadata;
+		datastring = data_obj.data;
 		//data = JSON.parse(datastring);
-
+		console.log("datastring " , datastring);
 		TASK = {};
 		TASK = datastring;
-		console.log(datastring);
-		console.log(TASK);
-		ENV.ParamFileName = datastring.path_display; 
-		ENV.ParamFileRev = datastring.rev;
-		ENV.ParamFileDate = new Date(datastring.client_modified);
+		
+		console.log("TASK", TASK);
+
+		ENV.ParamFileName = metadata.path_display; 
+		ENV.ParamFileRev = metadata.rev;
+		ENV.ParamFileDate = new Date(metadata.client_modified);
 		return 0; //need2loadParameters
 	}
 	
@@ -96,8 +99,12 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 
 	// Returns an array of identical format
 	console.log("parseAutomatorFilefromGDrive is running");
+	console.log(jsontxt_filepath);
 	var jsontxt_fileid = await pathToId(jsontxt_filepath);
-	var data = await loadTextFilefromGDrive(jsontxt_fileid);
+	data_obj = await new_downloadFile(jsontxt_fileid);
+	metadata = data_obj.metadata;
+	data = data_obj.data;
+	console.log("parseed automator file: ", data);
 	return data;
 
 	// Not being used, but maybe if you want to iterate over individual parameters
@@ -120,11 +127,13 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 
 //Global variable paramsData
 
+
 function loadTextFilefromGDrive(textfile_path){ 
 	//console.log("textfile_id is: " + textfile_path);
-	console.log(textfile_path);
+	console.log("loadTextFilefromGDrive fileid: " + textfile_path);
 
 	return new Promise(function(resolve,reject){
+	//jsonp_resolve = resolve;
 	downloadFile(textfile_path).then(function(data){
 
 	$.ajax({
@@ -133,14 +142,15 @@ function loadTextFilefromGDrive(textfile_path){
 		  dataType: 'jsonp',
 		  cache: false
 		});
-
-		resolve(data);
+	resolve(data);
 		
 	}).catch(function(error){
 	console.error(error);
 		})
 	})
 }
+
+//function setDisplayText
 
 //data is a javascript object; convert to text then blobify for compatibility with FileReader 
 function jsonp_callback(data) {
@@ -164,7 +174,34 @@ function jsonp_callback(data) {
 }
 
 
+var jsonp_resolve;
+var jsonp_metadata_object;
 
+function new_jsonp_callback(data)  {
+	jsonp_resolve({"data": data, "metadata": jsonp_metadata_object});
+	jsonp_callback(data);
+}
+
+function new_downloadFile(fileId)  {
+	return new Promise(function(resolve,reject){
+		jsonp_resolve = resolve;
+
+		gapi.client.drive.files.get({
+	      	"fileId": fileId,
+	      	"fields": "*"
+    	}).then(function(data){
+    		jsonp_metadata_object = data;
+	    	$.ajax({
+				crossDomain: true,
+				url: data.result.webContentLink,
+				dataType: 'jsonp',
+				cache: false
+			});	
+		}).catch(function(error){
+			console.error(error);
+		});
+	});
+}
 //Googledrive functions 
 //Downloads file whose fileId is provided 
 function downloadFile(fileId) {
@@ -369,7 +406,6 @@ async function saveParameterTexttoDropbox(parameter_text){
 
 async function saveParameterstoGDrive() {
 	var user = gapi.auth2.getAuthInstance().currentUser.get();
-	console.log(user);
 	var oauthToken = user.getAuthResponse(true).access_token;
 
 	//file name/path 
@@ -377,7 +413,7 @@ async function saveParameterstoGDrive() {
 	//content to write 
 	//why would you include null in concatenating strings?
 	var datastr = JSON.stringify(TASK,null,' ');
-	console.log(datastr);
+	console.log("saveParameterstoGDrive", datastr);
 
 	$.ajax({
 		url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=media",

@@ -193,8 +193,10 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	//================== AWAIT LOAD SUBJECT PARAMS ==================//
 	subjectdialog.showModal()
 	await subjectIDPromise()
+	console.log("ENV.Subject" + ENV.Subject);
 	ENV.ParamFileName = ENV.Subject + "_params.json";
 	await loadParametersfromGDrive(ENV.ParamFileName);
+	console.log("ENV.ParamFileName" +  ENV.ParamFileName);
 
 	
 	
@@ -252,7 +254,8 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		automator_data = await parseAutomatorFilefromGDrive(TASK.AutomatorFilePath);
 		automateTask(automator_data, trialhistory); 
 		await saveParameterstoGDrive();
-		await loadParametersfromDropbox(ENV.ParamFileName);
+		console.log("ENV.ParamFileName" , ENV.ParamFileName);
+		await loadParametersfromGDrive(ENV.ParamFileName);
 
 		//========= AWAIT PRELOAD IMAGES FOR AUTOMATOR STAGES =======//
 		// Preload stuff now (to ensure smooth transitions between automator stages)
