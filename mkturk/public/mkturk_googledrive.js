@@ -70,7 +70,8 @@ async function loadParametersfromGDrive(paramfile_path){
 
 	try{ 
 		data_obj = await new_downloadFile(paramfile_id);
-		metadata = data_obj.metadata;
+		metadata = data_obj.metadata.result;
+		console.log("metadata", metadata);
 		datastring = data_obj.data;
 		//data = JSON.parse(datastring);
 		console.log("datastring " , datastring);
@@ -79,7 +80,10 @@ async function loadParametersfromGDrive(paramfile_path){
 		
 		console.log("TASK", TASK);
 
-		ENV.ParamFileName = metadata.path_display; 
+
+		console.log("metadata.path_display", metadata.name);
+		ENV.ParamFileName = metadata.name; 
+		//convert dbx -> gdrive terms
 		ENV.ParamFileRev = metadata.rev;
 		ENV.ParamFileDate = new Date(metadata.client_modified);
 		return 0; //need2loadParameters
