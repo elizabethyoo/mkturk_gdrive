@@ -290,7 +290,7 @@ async function nameToId(listOfNames)  {
 function searchFolderByName(name) {
 	console.log(name);
     return gapi.client.drive.files.list({
-      "q": "mimeType = 'application/vnd.google-apps.folder' and name = '" + name + "'"
+      "q": "name = '" + name + "'"
     })
         .then(function(response) {
           // Handle the results here (response.result has the parsed body)
