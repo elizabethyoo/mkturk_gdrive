@@ -129,7 +129,8 @@ async function parseAutomatorFilefromGDrive(jsontxt_filepath){
 
 
 function loadTextFilefromGDrive(textfile_path){ 
-	//console.log("textfile_id is: " + textfile_path);
+	console.log("textfile_id is: " + textfile_path);
+
 	console.log("loadTextFilefromGDrive fileid: " + textfile_path);
 
 	return new Promise(function(resolve,reject){
@@ -183,6 +184,7 @@ function new_jsonp_callback(data)  {
 }
 
 function new_downloadFile(fileId)  {
+	console.log(fileId);
 	return new Promise(function(resolve,reject){
 		jsonp_resolve = resolve;
 
@@ -191,6 +193,7 @@ function new_downloadFile(fileId)  {
 	      	"fields": "*"
     	}).then(function(data){
     		jsonp_metadata_object = data;
+    		console.log(data.result.webContentLink);
 	    	$.ajax({
 				crossDomain: true,
 				url: data.result.webContentLink,
@@ -285,6 +288,7 @@ async function nameToId(listOfNames)  {
 
 //Searches Drive by folder name, returns a list of matching folders  
 function searchFolderByName(name) {
+	console.log(name);
     return gapi.client.drive.files.list({
       "q": "mimeType = 'application/vnd.google-apps.folder' and name = '" + name + "'"
     })
