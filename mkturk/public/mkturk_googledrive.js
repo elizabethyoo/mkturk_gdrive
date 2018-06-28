@@ -60,6 +60,144 @@ function retrieveAllFilesInFolder(folderId, callback) {
     });
 }
 
+/*
+Loading image bag paths?? - 
+history files replace w/ image source 
+*/
+async function loadImageBagPathsParallel(imagebagroot_s){
+	//var imagepaths = imagebagroot_s.map(loadImageBagIds)
+	//var funcreturn = await Promise.all(imagepaths); 
+	/* 
+	QE: What are labels and why do we concactenate paths and labels? 
+	var bagitems_paths = [] // Can also be paths to a single .png file. 
+	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+	*/
+
+	var imagepath_promises = imagebagroot_s.map(loadImageBagPaths); //create array of recursive path load Promises
+	var funcreturn = await Promise.all(imagepath_promises);
+	//Assemble images and add labels
+	var bagitems_paths = [] // Can also be paths to a single .png file. 
+	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+	for (var i=0; i<=funcreturn.length-1; i++){
+		bagitems_paths.push(... funcreturn[i][0])
+		for (var j=0; j<= funcreturn[i][0].length-1; j++){
+			bagitems_labels.push(i)
+		}
+	} //for i labels
+	return [bagitems_paths, bagitems_labels] 
+}
+
+//To do: given folder id, return an array of ids corresponding to all files in said folder 
+//Native google function should exist (get folder or something like that)
+async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s)
+{
+	try{
+		var bagitems_paths = [] // Can also be paths to a single .png file. 
+		var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
+
+		// Case 1: input = string. output = array of .png imagenames
+		if (typeof(imagebagroot_s) == "string"){
+			bagitems_paths = await retrieveAllFilesInFolder(imagebagroot_s)
+			for(var i_item = 0; i_item < bagitems_paths.length; i_item++){
+				bagitems_labels.push(0)
+			}
+			return [bagitems_paths, bagitems_labels]
+		}
+
+		// Case 2: input = array of (array of) paths. output = array of arrays of .png imagenames 	
+		for (var i = 0; i<imagebagroot_s.length; i++){
+			// If this class's imagebag consists of one (1) root. 
+			if (typeof(imagebagroot_s[i]) == "string"){
+				var i_itempaths = await retrieveAllFilesInFolder(imagebagroot_s[i])
+				bagitems_paths.push(... i_itempaths); 
+
+				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
+					bagitems_labels.push(i)
+				}
+			}
+			// If this class's imagebag consists of multiple roots.
+			else if(typeof(imagebagroot_s[i]) == "object"){
+				var i_itempaths = []
+				for (var j = 0; j<imagebagroot_s[i].length; j++){
+					i_itempaths.push(... await retrieveAllFilesInFolder(imagebagroot_s[i][j])); 
+				}
+				bagitems_paths.push(... i_itempaths)
+
+				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
+					bagitems_labels.push(i)
+				}	
+			}
+		}
+	}
+	catch(error){
+		console.log(error)
+	}
+
+	return [bagitems_paths, bagitems_labels] 
+}
+
+
+async function getImageListDropboxRecursive(dirpath){
+	var file_list = []
+
+
+	if(dirpath.endsWith('.png')){
+		return [dirpath]
+	}
+
+	try{
+
+		var entries = []
+
+		console.log(dirpath);
+		//calling externally so could be problematic 
+		response = await dbx.filesListFolder({path: dirpath, 
+											  recursive: true}) 
+		console.log(response);
+
+		entries.push(... response.entries)
+
+		// Use response.has_more to propagate 
+		var num_iterations = 0
+		var iteration_limit = 100
+		while(response.has_more == true){
+			response = await dbx.filesListFolderContinue(response.cursor)
+			console.log(response);
+			
+			entries.push(... response.entries)
+
+			num_iterations = num_iterations + 1 
+			if(num_iterations > iteration_limit)
+				{throw 'Hit iteration limit of '+iteration_limit+'. Check your imagebag directory is not insanely large.'}
+		}
+
+		
+		var q2=0;
+		for (var q = 0; q <= entries.length-1; q++){
+			if (entries[q][".tag"] == "file" && entries[q].name.endsWith(".png")) {
+				file_list.push(entries[q].path_display) //'/'+entries[q].name)
+				q2++;
+			}
+		}
+		//console.log(file_list.length+" file(s) discovered in directory \""+dirpath+"\" (and any subdirectories). ")
+
+		datafiles.sort(function (a,b){
+			if (a > b){
+				return -1;
+			}
+			if (a < b){
+				return 1;
+			}
+			return 0;
+		}); //sort in descending order
+
+		return file_list
+	}
+	catch (error) {
+		console.error(error)
+	}
+}
+
 
 //================== LOAD JSON ==================//
 async function loadParametersfromGDrive(paramfile_path){

@@ -25,6 +25,7 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest){
 	this.num_in_queue = 0; // Tracking variable
 }
 
+//QE: What does build do? 
 async build(trial_cushion_size){
 	// Call after construction
 	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsSample); 
