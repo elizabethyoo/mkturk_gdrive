@@ -16,6 +16,10 @@
 
 <!-- ************* BODY *************** -->
 <body bgcolor=#7F7F7F>
+
+<!-- test image tag -->
+<img id = "test" src = "https://drive.google.com/a/columbia.edu/uc?id=1KDNCUlGXD5qiEBe0xf_W6LFuW3-kJrHl&export=download", style="display: none;">
+
 <div id="canvasdiv" style="position:relative; width:100vw; height:100vh">
 	<button name="connectble" style="visibility:hidden; position: absolute; top: 45%; left: 45%; height: 50px; width: 200px; border-radius: 20px">Connect to Bluetooth juicer</button>
 
@@ -40,6 +44,8 @@
 	<canvas id="canvasreward" width="0" height="0" src="" style="z-index:5; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvasphotoreward" width="0" height="0" src="" style="z-index:6; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvaspunish" width="0" height="0" src="" style="z-index:7; position: absolute; left: 0px; top: 0px;"> </canvas>
+
+
 </div>
 <dialog id="subjectID_dialog">
   <p>Select subject: </p>
@@ -62,6 +68,11 @@
 
 <script>
 
+document.getElementById("test").style.display = "inline";
+
+var myFunc = function()  {
+	//document.getElementById("id").onload = "";
+}
 //================== AUTHENTICATE ==================//
 
 // Client ID and API key from the Developer Console
@@ -258,6 +269,16 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		await loadParametersfromGDrive(ENV.ParamFileName);
 
 		//========= AWAIT PRELOAD IMAGES FOR AUTOMATOR STAGES =======//
+		/*Create image tags recursively for all images in Dropbox
+		for (var i = 1; i < 5; i++) {
+    		var img = document.createElement("img");
+    		img.src = "images/pics/imageTab0" + i;
+    		imageTabsDiv.appendChild(img);
+		}
+		*/
+
+
+
 		// Preload stuff now (to ensure smooth transitions between automator stages)
 		var AutomatorPreBuffer = {}; 
 		AutomatorPreBuffer['TrialQueue'] = {}; 

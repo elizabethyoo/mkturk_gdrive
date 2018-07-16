@@ -92,12 +92,15 @@ async function loadImageBagPathsParallel(imagebagroot_s){
 async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s)
 {
 	try{
+		
 		var bagitems_paths = [] // Can also be paths to a single .png file. 
 		var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
 
+		//Wait this is redundant 
 		// Case 1: input = string. output = array of .png imagenames
 		if (typeof(imagebagroot_s) == "string"){
-			bagitems_paths = await retrieveAllFilesInFolder(imagebagroot_s)
+			var imagebag_id = pathToId(imagebagroot_s); 
+			bagitems_paths = await retrieveAllFilesInFolder(imagebag_id)
 			for(var i_item = 0; i_item < bagitems_paths.length; i_item++){
 				bagitems_labels.push(0)
 			}
