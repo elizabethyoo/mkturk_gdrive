@@ -258,8 +258,11 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	
 	}
 
+
+	
 	//===================== AWAIT INITIALIZE AUTOMATOR =================//
 	// Initialize automator - change TASK to that specified by TASK.CurrentAutomatorStage. 
+	/*
 	if (TASK.Automator != 0){
 		console.log("TASK.AutomatorFilePath is: " + TASK.AutomatorFilePath);
 		automator_data = await parseAutomatorFilefromGDrive(TASK.AutomatorFilePath);
@@ -269,15 +272,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		await loadParametersfromGDrive(ENV.ParamFileName);
 
 		//========= AWAIT PRELOAD IMAGES FOR AUTOMATOR STAGES =======//
-		/*Create image tags recursively for all images in Dropbox
-		for (var i = 1; i < 5; i++) {
-    		var img = document.createElement("img");
-    		img.src = "images/pics/imageTab0" + i;
-    		imageTabsDiv.appendChild(img);
-		}
-		*/
-
-
+		
 
 		// Preload stuff now (to ensure smooth transitions between automator stages)
 		var AutomatorPreBuffer = {}; 
@@ -299,9 +294,11 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 		}
 		console.log('Done prebuffering')
 	} //if automator
+	*/
 
 	//============= AWAIT LOAD SOUNDS =============//
 	
+	/*
 	var soundtest = await nameToId(['au0', 'au1', 'au2', 'au3', 'au4', 'au5']);
 	console.log(soundtest);
 	console.log(soundtest.map(downloadFile));
@@ -309,7 +306,8 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	soundpromises = sounds.serial.map(loadSoundfromDropbox2); //create array of sound load Promises
 	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
 	updateStatusText("")
-
+	*/
+	
 	//========= Start in TEST mode =======//
 	document.querySelector("button[name=doneTestingTask]").style.display = "block"
 	document.querySelector("button[name=doneTestingTask]").style.visibility = "visible"
@@ -328,7 +326,7 @@ while(true){
 	if (FLAGS.need2loadParameters == 1){
 		var old_ImageBagsSample = TASK.ImageBagsSample
 		var old_ImageBagsTest = TASK.ImageBagsTest
-		FLAGS.need2loadParameters = await loadParametersfromDropbox(ENV.ParamFileName);
+		FLAGS.need2loadParameters = await loadParametersfromGDrive(ENV.ParamFileName);
 
 		//============= SET UP CANVAS =============//
 		// Update canvas based on latest TASK state: 
@@ -366,6 +364,16 @@ while(true){
 
 
 	//============ CREATE IMAGE BAG & DISPLAY GRID ============//
+
+	/*Create image tags recursively for all images in Dropbox
+		for (var i = 1; i < 5; i++) {
+    		var img = document.createElement("img");
+    		img.src = "images/pics/imageTab0" + i;
+    		imageTabsDiv.appendChild(img);
+		}
+		*/
+
+
 	if (FLAGS.need2loadImages == 1){
 		console.time('Image loading time:')
 

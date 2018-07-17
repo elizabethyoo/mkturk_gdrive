@@ -65,13 +65,8 @@ Loading image bag paths?? -
 history files replace w/ image source 
 */
 async function loadImageBagPathsParallel(imagebagroot_s){
-	//var imagepaths = imagebagroot_s.map(loadImageBagIds)
-	//var funcreturn = await Promise.all(imagepaths); 
-	/* 
-	QE: What are labels and why do we concactenate paths and labels? 
-	var bagitems_paths = [] // Can also be paths to a single .png file. 
-	var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
-	*/
+	//get image urls 
+	console.log("imagebagroot_s ", imagebagroot_s);
 
 	var imagepath_promises = imagebagroot_s.map(loadImageBagPaths); //create array of recursive path load Promises
 	var funcreturn = await Promise.all(imagepath_promises);
@@ -92,43 +87,25 @@ async function loadImageBagPathsParallel(imagebagroot_s){
 async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s)
 {
 	try{
+		console.log("imagebagroot_s", imagebagroot_s);
 		
 		var bagitems_paths = [] // Can also be paths to a single .png file. 
 		var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
 
-		//Wait this is redundant 
-		// Case 1: input = string. output = array of .png imagenames
-		if (typeof(imagebagroot_s) == "string"){
-			var imagebag_id = pathToId(imagebagroot_s); 
-			bagitems_paths = await retrieveAllFilesInFolder(imagebag_id)
-			for(var i_item = 0; i_item < bagitems_paths.length; i_item++){
-				bagitems_labels.push(0)
-			}
-			return [bagitems_paths, bagitems_labels]
-		}
+		console.log("bagitems_paths", bagitems_paths);
+		console.log("bagitems_labels", bagitems_labels);
 
 		// Case 2: input = array of (array of) paths. output = array of arrays of .png imagenames 	
 		for (var i = 0; i<imagebagroot_s.length; i++){
 			// If this class's imagebag consists of one (1) root. 
 			if (typeof(imagebagroot_s[i]) == "string"){
 				var i_itempaths = await retrieveAllFilesInFolder(imagebagroot_s[i])
+				console.log("i_itempaths", i_itempaths);
 				bagitems_paths.push(... i_itempaths); 
 
 				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
 					bagitems_labels.push(i)
 				}
-			}
-			// If this class's imagebag consists of multiple roots.
-			else if(typeof(imagebagroot_s[i]) == "object"){
-				var i_itempaths = []
-				for (var j = 0; j<imagebagroot_s[i].length; j++){
-					i_itempaths.push(... await retrieveAllFilesInFolder(imagebagroot_s[i][j])); 
-				}
-				bagitems_paths.push(... i_itempaths)
-
-				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
-					bagitems_labels.push(i)
-				}	
 			}
 		}
 	}
