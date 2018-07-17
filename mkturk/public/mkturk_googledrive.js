@@ -87,6 +87,10 @@ async function loadImageBagPathsParallel(imagebagroot_s){
 async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s)
 {
 	try{
+	//currently imagebagroots_s is an array of folder ids taken directly from the params file
+	//get children of said folders and 
+	//get urls for all images in the imagebags 
+
 		console.log("imagebagroot_s", imagebagroot_s);
 		
 		var bagitems_paths = [] // Can also be paths to a single .png file. 
@@ -347,6 +351,18 @@ function generate_wrapper(data) {
           return response 
         }
 */
+
+//Lists all children of a folder 
+function listChildren(folderId) {
+    return gapi.client.drive.children.list({
+      "folderId": folderId,
+      "fields": "*"
+    })
+        .then(function(response) {
+                // Handle the results here (response.result has the parsed body).
+                console.log("Response", response);
+              })
+}
 
 //Searches Drive by file name, returns a list of matching files  
 function searchFileByName(name) {
