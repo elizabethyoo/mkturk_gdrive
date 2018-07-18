@@ -46,7 +46,7 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
  *
  */
 function retrieveAllFilesInFolder(folderId, callback) {
-	console.log(folderId);
+console.log(folderId);
   return gapi.client.drive.files.list({
         //search inside folder with given folderId
         'q' : "'" + folderId + "' in parents",
@@ -61,10 +61,6 @@ function retrieveAllFilesInFolder(folderId, callback) {
     });
 }
 
-/*
-Loading image bag paths?? - 
-history files replace w/ image source 
-*/
 async function loadImageBagPathsParallel(imagebagroot_s){
 	var imagepath_promises = imagebagroot_s.map(loadImageBagPaths); //create array of recursive path load Promises
 	console.log("imgpath_promises", imagepath_promises);
@@ -81,7 +77,7 @@ async function loadImageBagPathsParallel(imagebagroot_s){
 	console.log(funcreturn);
 	console.log(bagitems_paths);
 	console.log(bagitems_labels);
-
+	console.log("return value", [bagitems_paths, bagitems_labels])
 	return [bagitems_paths, bagitems_labels] 
 }
 
@@ -89,9 +85,8 @@ async function loadImageBagPathsParallel(imagebagroot_s){
 async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s) 
 
 {
-	console.log(idx);
 	try{
-
+		console.log("idx", idx);
 		console.log("imagebagroot_s", imagebagroot_s);
 		
 		var bagitems_paths = [] // Can also be paths to a single .png file. 
@@ -101,7 +96,8 @@ async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s)
 		var i_itempaths = await retrieveAllFilesInFolder(imagebagroot_s)
 		console.log("i_itempaths", i_itempaths);
 		for (var i = 0; i < i_itempaths.result.files.length; i++) {
-			bagitems_paths.push(i_itempaths.result.files[i]); 
+			console.log(i_itempaths.result.files[i].id);
+			bagitems_paths.push(i_itempaths.result.files[i].id); 
 			bagitems_labels.push(idx);
 		}
 		
@@ -181,6 +177,134 @@ async function getImageListDropboxRecursive(dirpath){
 		console.error(error)
 	}
 }
+
+//================== LOAD IMAGE ==================//
+async function loadBagfromDropbox(imagebags_parameter){
+
+	// Locate all .png in directory and subdirectories specified in imagebags_parameter
+	// Return in ONE 1-dimensional array, along with label vector that indexes given imagbags_order
+	try{
+		var funcreturn = await loadImageBagPaths(imagebags_parameter); 
+	}
+	catch(error){
+		console.log('Path loading failed', error)
+	}
+	var imagebag_paths = funcreturn[0]
+	var imagebag_labels = funcreturn[1] 
+
+	// Load all .png blobs into an array. 
+	// Todo: fix array load (promises elements aren't actually fulfilled)
+	try{
+		var imagebag = await loadImageArrayfromDropbox(imagebag_paths)
+	}
+	catch(error){
+		console.log('Image array load failed', error)
+	}
+
+	console.log('Done loading bag: '+imagebag.length+' out of '+imagebag_paths.length+ ' images loaded successfully.')
+	return [imagebag, imagebag_labels, imagebag_paths]
+}
+
+
+async function loadImageArrayfromDropbox(imagepathlist){
+	try{
+		var MAX_SIMULTANEOUS_REQUESTS = 500 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
+		var MAX_TOTAL_REQUESTS = 3000 // Empirically chosen
+
+		if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
+			throw "Under the Dropbox API, cannot load more than "+MAX_TOTAL_REQUESTS+" images at a short time period. You have requested "
+			+imagepathlist.length+". Consider using an image loading strategy that reduces the request rate on Dropbox."
+			return 
+		}
+
+		if (imagepathlist.length > MAX_SIMULTANEOUS_REQUESTS){
+			console.log('Chunking your '+ imagepathlist.length+' image requests into '+Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS)+' chunks of (up to) '+MAX_SIMULTANEOUS_REQUESTS+' each. ')
+			var image_array = []
+
+			for (var i = 0; i < Math.ceil(imagepathlist.length / MAX_SIMULTANEOUS_REQUESTS); i++){
+				var lb = i*MAX_SIMULTANEOUS_REQUESTS; 
+				var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
+				var partial_pathlist = imagepathlist.slice(lb, ub);
+
+				// var partial_image_requests = partial_pathlist.map(loadImagefromDropbox);
+				var partial_image_requests = []
+				for (var j = 0; j<partial_pathlist.length; j++){
+					partial_image_requests.push(loadImagefromDropbox(partial_pathlist[j]))
+				}
+
+				var partial_image_array = await Promise.all(partial_image_requests)
+				image_array.push(... partial_image_array); 
+			}
+			
+		}
+		else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
+			//var image_requests = [] 
+			//image_requests = imagepathlist.map(loadImagefromDropbox)
+			//var image_array = await Promise.all(image_requests) 
+
+
+			//for (var j = 0; j<imagepathlist.length; j++){
+			//	console.log(j)
+			//	image_array.push(loadImagefromDropbox(imagepathlist[j])) // test with no awaits
+			//}
+
+			var image_requests = imagepathlist.map(loadImagefromDropbox); 
+			
+			var image_array = await Promise.all(image_requests)
+		}
+		return image_array
+	}
+	catch(err){
+		console.log(err)
+	}
+
+}
+
+
+async function loadImagefromDropbox(imagepath){
+	// Loads and returns a single image located at imagepath into an Image()
+	// Upon failure (e.g. from Dropbox API limit), will retry up to MAX_RETRIES. 
+	// Will wait between retries with linear increase in waittime between tries. 
+	return new Promise(
+		function(resolve, reject){
+			try{
+				var MAX_RETRIES = 5 
+				var backoff_time_seed = 500 // ms; is multiplied by retry number. 
+				var retry_number = 0; 
+				//while(true && retry_number <= MAX_RETRIES){
+					try{
+						dbx.filesDownload({path: imagepath}).then( 
+							function(data){
+								var data_src = window.URL.createObjectURL(data.fileBlob); 	
+								var image = new Image(); 
+
+								image.onload = function(){
+									console.log('Loaded: ' + (imagepath));
+									updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
+									resolve(image)
+									}
+								image.src = data_src
+							}
+						)
+					}
+					catch(error){
+						retry_number = retry_number + 1; 
+						console.log(error)
+						console.log('On retry '+retry_number)
+						sleep(backoff_time_seed * retry_number)
+						//continue
+					}
+				//}	
+			}
+			catch(error){
+				console.log(error)
+				resolve(0)
+			}
+		}
+	)
+}
+
+
 
 
 //================== LOAD JSON ==================//

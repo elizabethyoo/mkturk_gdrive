@@ -28,13 +28,21 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest){
 //QE: What does build do? 
 async build(trial_cushion_size){
 	// Call after construction
+	console.log("ImageBagsSample", this.ImageBagsSample);
 	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsSample); 
 	this.samplebag_labels = funcreturn[1];
+	console.log("this.samplebag_labels", this.samplebag_labels);
 	this.samplebag_paths = funcreturn[0]; 
+	console.log("this.samplebag_labels", this.samplebag_paths);
+
 
 	var funcreturn = await loadImageBagPathsParallel(this.ImageBagsTest); 
+	console.log("ImageBagsTest", this.ImageBagsTest);
 	this.testbag_labels = funcreturn[1]; 
 	this.testbag_paths = funcreturn[0]; 
+	console.log("this.testbag_labels", this.testbag_labels);
+	console.log("this.testbag_labels", this.testbag_labels);
+
 
 	console.log('this.build() will generate ' + trial_cushion_size + ' trials')
 	await this.generate_trials(trial_cushion_size); 

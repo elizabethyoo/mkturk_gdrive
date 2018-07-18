@@ -382,6 +382,8 @@ while(true){
 			// Loads filenames manually from Dropbox
 			var samplingStrategy = 'uniform_with_replacement' // todo: add more options; move into TASK
 			TQ = new TrialQueue(samplingStrategy, TASK.ImageBagsSample, TASK.ImageBagsTest)
+			console.log("TASK.ImageBagsSample", TASK.ImageBagsSample);
+			console.log("TASK.ImageBagsSample", TQ.ImageBagsSample);
 			await TQ.build(1)
 		}	
 		else if(TASK.Automator == 1){
