@@ -46,9 +46,10 @@ async function getMostRecentBehavioralFilePathsFromGDrive(num_files_to_get, subj
  *
  */
 function retrieveAllFilesInFolder(folderId, callback) {
+	console.log(folderId);
   return gapi.client.drive.files.list({
         //search inside folder with given folderId
-        'q' : "parents in '" + folderId + "'",
+        'q' : "'" + folderId + "' in parents",
         //sort chronololgically (titles of history files are published dates)
         'orderBy': "name",
     }).then(function(response) {
@@ -65,10 +66,8 @@ Loading image bag paths?? -
 history files replace w/ image source 
 */
 async function loadImageBagPathsParallel(imagebagroot_s){
-	//get image urls 
-	console.log("imagebagroot_s ", imagebagroot_s);
-
 	var imagepath_promises = imagebagroot_s.map(loadImageBagPaths); //create array of recursive path load Promises
+	console.log("imgpath_promises", imagepath_promises);
 	var funcreturn = await Promise.all(imagepath_promises);
 	//Assemble images and add labels
 	var bagitems_paths = [] // Can also be paths to a single .png file. 
@@ -79,40 +78,41 @@ async function loadImageBagPathsParallel(imagebagroot_s){
 			bagitems_labels.push(i)
 		}
 	} //for i labels
+	console.log(funcreturn);
+	console.log(bagitems_paths);
+	console.log(bagitems_labels);
+
 	return [bagitems_paths, bagitems_labels] 
 }
 
-//To do: given folder id, return an array of ids corresponding to all files in said folder 
-//Native google function should exist (get folder or something like that)
-async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s)
+
+async function loadImageBagPaths(imagebagroot_s,idx) //(imagebagroot_s) 
+
 {
+	console.log(idx);
 	try{
-	//currently imagebagroots_s is an array of folder ids taken directly from the params file
-	//get children of said folders and 
-	//get urls for all images in the imagebags 
 
 		console.log("imagebagroot_s", imagebagroot_s);
 		
 		var bagitems_paths = [] // Can also be paths to a single .png file. 
 		var bagitems_labels = [] // The labels are integers that index elements of imagebagroot_s. So, a label of '0' means the image belongs to the first imagebag.
 
+	
+		var i_itempaths = await retrieveAllFilesInFolder(imagebagroot_s)
+		console.log("i_itempaths", i_itempaths);
+		for (var i = 0; i < i_itempaths.result.files.length; i++) {
+			bagitems_paths.push(i_itempaths.result.files[i]); 
+			bagitems_labels.push(idx);
+		}
+		
+
 		console.log("bagitems_paths", bagitems_paths);
 		console.log("bagitems_labels", bagitems_labels);
 
-		// Case 2: input = array of (array of) paths. output = array of arrays of .png imagenames 	
-		for (var i = 0; i<imagebagroot_s.length; i++){
-			// If this class's imagebag consists of one (1) root. 
-			if (typeof(imagebagroot_s[i]) == "string"){
-				var i_itempaths = await retrieveAllFilesInFolder(imagebagroot_s[i])
-				console.log("i_itempaths", i_itempaths);
-				bagitems_paths.push(... i_itempaths); 
-
-				for(var i_item = 0; i_item < i_itempaths.length; i_item++){
-					bagitems_labels.push(i)
-				}
-			}
+		
+			
 		}
-	}
+
 	catch(error){
 		console.log(error)
 	}
@@ -354,14 +354,15 @@ function generate_wrapper(data) {
 
 //Lists all children of a folder 
 function listChildren(folderId) {
-    return gapi.client.drive.children.list({
-      "folderId": folderId,
+    return gapi.client.drive.files.list({
+      "q": "'" + folderId + "' in parents",
       "fields": "*"
     })
         .then(function(response) {
                 // Handle the results here (response.result has the parsed body).
                 console.log("Response", response);
-              })
+              },
+              function(err) { console.error("Execute error", err); });
 }
 
 //Searches Drive by file name, returns a list of matching files  
