@@ -368,6 +368,7 @@ async function loadImagefromDropbox(imagepath){
 				var backoff_time_seed = 500 // ms; is multiplied by retry number. 
 				var retry_number = 0; 
 				//while(true && retry_number <= MAX_RETRIES){
+					//
 					try{
 						dbx.filesDownload({path: imagepath}).then( 
 							function(data){

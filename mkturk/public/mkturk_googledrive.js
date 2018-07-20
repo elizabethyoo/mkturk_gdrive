@@ -208,6 +208,8 @@ async function loadBagfromDropbox(imagebags_parameter){
 
 async function loadImageArrayfromDropbox(imagepathlist){
 	try{
+		console.log("imagepathlist", imagepathlist);
+		//is there a maximum number of images you can load from google drive? 
 		var MAX_SIMULTANEOUS_REQUESTS = 500 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
 		var MAX_TOTAL_REQUESTS = 3000 // Empirically chosen
 
