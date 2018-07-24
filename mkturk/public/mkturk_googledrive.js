@@ -195,7 +195,7 @@ async function loadBagfromDropbox(imagebags_parameter){
 	// Load all .png blobs into an array. 
 	// Todo: fix array load (promises elements aren't actually fulfilled)
 	try{
-		var imagebag = await loadImageArrayfromDropbox(imagebag_paths)
+		var imagebag = await loadImageArrayfromGDrive(imagebag_paths)
 	}
 	catch(error){
 		console.log('Image array load failed', error)
@@ -206,7 +206,7 @@ async function loadBagfromDropbox(imagebags_parameter){
 }
 
 
-async function loadImageArrayfromDropbox(imagepathlist){
+async function loadImageArrayfromGDrive(imagepathlist){
 	try{
 		console.log("imagepathlist", imagepathlist);
 		//is there a maximum number of images you can load from google drive? 
@@ -228,10 +228,10 @@ async function loadImageArrayfromDropbox(imagepathlist){
 				var ub = i*MAX_SIMULTANEOUS_REQUESTS + MAX_SIMULTANEOUS_REQUESTS; 
 				var partial_pathlist = imagepathlist.slice(lb, ub);
 
-				// var partial_image_requests = partial_pathlist.map(loadImagefromDropbox);
+				// var partial_image_requests = partial_pathlist.map(loadImagefromGDrive);
 				var partial_image_requests = []
 				for (var j = 0; j<partial_pathlist.length; j++){
-					partial_image_requests.push(loadImagefromDropbox(partial_pathlist[j]))
+					partial_image_requests.push(loadImagefromGDrive(partial_pathlist[j]))
 				}
 
 				var partial_image_array = await Promise.all(partial_image_requests)
@@ -241,16 +241,16 @@ async function loadImageArrayfromDropbox(imagepathlist){
 		}
 		else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
 			//var image_requests = [] 
-			//image_requests = imagepathlist.map(loadImagefromDropbox)
+			//image_requests = imagepathlist.map(loadImagefromGDrive)
 			//var image_array = await Promise.all(image_requests) 
 
 
 			//for (var j = 0; j<imagepathlist.length; j++){
 			//	console.log(j)
-			//	image_array.push(loadImagefromDropbox(imagepathlist[j])) // test with no awaits
+			//	image_array.push(loadImagefromGDrive(imagepathlist[j])) // test with no awaits
 			//}
 
-			var image_requests = imagepathlist.map(loadImagefromDropbox); 
+			var image_requests = imagepathlist.map(loadImagefromGDrive); 
 			
 			var image_array = await Promise.all(image_requests)
 		}
@@ -263,40 +263,31 @@ async function loadImageArrayfromDropbox(imagepathlist){
 }
 
 
-async function loadImagefromDropbox(imagepath){
+async function loadImagefromGDrive(imagepath){
 	// Loads and returns a single image located at imagepath into an Image()
 	// Upon failure (e.g. from Dropbox API limit), will retry up to MAX_RETRIES. 
 	// Will wait between retries with linear increase in waittime between tries. 
 	return new Promise(
 		function(resolve, reject){
 			try{
-				var MAX_RETRIES = 5 
-				var backoff_time_seed = 500 // ms; is multiplied by retry number. 
-				var retry_number = 0; 
-				//while(true && retry_number <= MAX_RETRIES){
-					try{
-						dbx.filesDownload({path: imagepath}).then( 
-							function(data){
-								var data_src = window.URL.createObjectURL(data.fileBlob); 	
-								var image = new Image(); 
+					
+				downloadFile(imagepath).then( 
+					function(data){
+						console.log("imagepath_data", data);
+						console.log("data.result.webContentLink", data.result.webContentLink);
+						var data_src = data.result.webContentLink 
+						//window.URL.createObjectURL(data.result.webContentLink); 	
+						var image = new Image(); 
 
-								image.onload = function(){
-									console.log('Loaded: ' + (imagepath));
-									updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
-									resolve(image)
-									}
-								image.src = data_src
+						image.onload = function(){
+							console.log('Loaded: ' + (imagepath));
+							updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
+							resolve(image)
 							}
-						)
+						image.src = data_src
 					}
-					catch(error){
-						retry_number = retry_number + 1; 
-						console.log(error)
-						console.log('On retry '+retry_number)
-						sleep(backoff_time_seed * retry_number)
-						//continue
-					}
-				//}	
+				)
+				
 			}
 			catch(error){
 				console.log(error)
