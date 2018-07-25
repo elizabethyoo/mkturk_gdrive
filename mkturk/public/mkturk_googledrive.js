@@ -210,7 +210,7 @@ async function loadImageArrayfromGDrive(imagepathlist){
 	try{
 		console.log("imagepathlist", imagepathlist);
 		//is there a maximum number of images you can load from google drive? 
-		var MAX_SIMULTANEOUS_REQUESTS = 500 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
+		var MAX_SIMULTANEOUS_REQUESTS = 1 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
 		var MAX_TOTAL_REQUESTS = 3000 // Empirically chosen
 
 		if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
@@ -297,6 +297,32 @@ async function loadImagefromGDrive(imagepath){
 	)
 }
 
+
+//================== CHECK FILE REV ==================//
+// Asynchronous: Check for parmater file update
+async function checkParameterFileStatus(){
+	try{
+		var oldRev = ENV.ParamFileRev;
+		var oldDate = ENV.ParamFileDate;
+		console.log("ENV.ParamFileName", ENV.ParamFileName);
+		var fileId = await loadParametersfromGDrive(ENV.ParamFileName);
+		console.log("fileId", fileId);
+
+		//var filemeta = await downloadFile(fileId);
+		//console.log("checkParamsStatus filemeta", filemeta);
+		
+		if (oldRev != ENV.ParamFileRev){
+	
+			FLAGS.need2loadParameters = 1
+
+			console.log('Parameter file on disk was changed. New rev =' + ENV.ParamFileRev)
+		}
+		
+	}
+	catch(error) {
+		console.error(error)
+	}
+}
 
 
 
@@ -523,8 +549,8 @@ async function nameToId(listOfNames)  {
 		var data = await gapi.client.drive.files.list({
   		"q": "name contains '" + listOfNames[i] + "'"
 })
-		console.log(data);
-		console.log("await is done");
+		console.log("nameToId data", data);
+		
 		//sort data by date, obtained from metadata
 
 
@@ -535,6 +561,7 @@ async function nameToId(listOfNames)  {
     	//}, function(error) {
       	//console.error("Execute error", error);
       	idList[i] = data.result.files[0].id;
+      	console.log("idList", idList);
     }
     //);;
 		

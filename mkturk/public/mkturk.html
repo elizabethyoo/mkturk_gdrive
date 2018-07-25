@@ -224,6 +224,8 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	textobj.removeEventListener('touchend',headsuptext_listener)
 	textobj.removeEventListener('mouseup',headsuptext_listener)
 	document.querySelector("p[id=headsuptext]").setAttribute("contentEditable",false)
+	document.querySelector("p[id=headsuptext]").style.display = "none";
+
 
 	if (FLAGS.need2saveParameters == 1){
 		var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
@@ -387,7 +389,7 @@ while(true){
 		testbag_labels = TQ.testbag_labels
 
 		// Write down dimensions of (assumedly) all images in samplebag and testbag, based on the first sample image.
-		await TQ.generate_trials(1)
+		await TQ.generate_trials(100)
 		var representative_image = await TQ.IB.get_by_name(TQ.sampleq.filename[0])
 		// var representative_image = await imagebag.get_by_name(samplebag_paths[0])
 		ENV.ImageWidthPixels = representative_image.width

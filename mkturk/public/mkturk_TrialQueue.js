@@ -25,7 +25,6 @@ constructor(samplingStrategy, ImageBagsSample, ImageBagsTest){
 	this.num_in_queue = 0; // Tracking variable
 }
 
-//QE: What does build do? 
 async build(trial_cushion_size){
 	// Call after construction
 	console.log("ImageBagsSample", this.ImageBagsSample);
@@ -92,6 +91,7 @@ async generate_trials(n_trials){
 		this.testq.correctIndex.push(correctIndex)
 
 		this.num_in_queue++;
+
 	}
 	// Download images to support these trials to download queue
 	console.log("TQ.generate_trials() will request", image_requests.length)
@@ -105,7 +105,7 @@ async get_next_trial(){
 
 	if (this.sampleq.filename.length == 0){
 		console.log("Reached end of trial queue... generating one more in this.get_next_trial")
-		await this.generate_trials(1); 
+		await this.generate_trials(100); 
 	}
 
 	var sample_filename = this.sampleq.filename.shift(); 
