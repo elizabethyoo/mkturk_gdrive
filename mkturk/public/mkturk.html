@@ -42,6 +42,24 @@
 	<canvas id="canvasphotoreward" width="0" height="0" src="" style="z-index:6; position: absolute; left: 0px; top: 0px;"> </canvas>
 	<canvas id="canvaspunish" width="0" height="0" src="" style="z-index:7; position: absolute; left: 0px; top: 0px;"> </canvas>
 
+	<!-- ************* AUDIO FILES *************** -->
+	<!-- preload = "none" "metadata" "auto" -->
+	 <audio preload="metadata" id="au0">
+	    <source id="src0" type="audio/mpeg">
+	 </audio>
+	  <audio preload="metadata" id="au1">
+	    <source id="src1" type="audio/mpeg">
+	 </audio>
+	  <audio preload="metadata" id="au2">
+	    <source id="src2" type="audio/mpeg">
+	 </audio>
+	  <audio preload="metadata" id="au3">
+	    <source id="src3" type="audio/mpeg">
+	 </audio>
+	  <audio preload="metadata" id="au4">
+	    <source id="src4" type="audio/mpeg">
+	 </audio>
+
 
 </div>
 <dialog id="subjectID_dialog">
@@ -297,9 +315,20 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	console.log(soundtest);
 	console.log(soundtest.map(downloadFile));
 	*/
-	console.log("sounds.serial", sounds.serial);
-	soundpromises = sounds.serial.map(loadSoundfromGDrive); //create array of sound load Promises
-	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
+	soundpromises = [];
+	for (var i = 0; i < sounds.serial.length; i++)  {
+		var sound = await loadSoundfromGDrive(sounds.serial[i], i);
+		soundpromises.push(sound);
+		audio_tag = document.getElementById("au" + sounds.serial[i]);
+		source_tag = document.getElementById("src" + sounds.serial[i]);
+
+		source_tag.src = sound;
+		audio_tag.load();
+		console.log(sound);
+		console.log(source_tag);
+		console.log(audio_tag);
+		//audio_tag.play();
+	}
 	updateStatusText("")
 	
 	
@@ -607,6 +636,8 @@ while(true){
 	}
 	//============ (end) DELIVER REWARD/PUNISH ============//
 
+	saveTextFiletoGDrive("mkturk_liz", "blahblah");
+
 	//================= HOUSEKEEPING =================//
 	CURRTRIAL.lastTrialCompleted = new Date()
 	// Update TRIAL only if saving data
@@ -642,23 +673,6 @@ while(true){
 })();
 
 </script>
-<!-- ************* AUDIO FILES *************** -->
-<!-- preload = "none" "metadata" "auto" -->
- <audio preload="metadata" id="au0">
-    <source id="src0" type="audio/mpeg">
- </audio>
-  <audio preload="metadata" id="au1">
-    <source id="src1" type="audio/mpeg">
- </audio>
-  <audio preload="metadata" id="au2">
-    <source id="src2" type="audio/mpeg">
- </audio>
-  <audio preload="metadata" id="au3">
-    <source id="src3" type="audio/mpeg">
- </audio>
-  <audio preload="metadata" id="au4">
-    <source id="src4" type="audio/mpeg">
- </audio>
 
 
  <script async defer src="https://apis.google.com/js/api.js"

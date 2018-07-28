@@ -597,23 +597,17 @@ async function pathToId(path)  {
 }
 
 //================== LOAD AUDIO ==================//
-function loadSoundfromGDrive(src,idx){
+async function loadSoundfromGDrive(src,idx){
+	var audioFileId = await nameToId(["au" + src + ".wav"]);
 	return new Promise(function(resolve,reject){
-		var audioFileId = pathToId(SOUND_FILEPREFIX + src);
 		console.log("srcToId: ", audioFileId);
 		downloadFile(audioFileId).then(function(data){
-		var reader = new FileReader()
-		reader.onload = function(e){
-			audiocontext.decodeAudioData(reader.result).then(function(buffer){
-				sounds.buffer[idx] = buffer;
-				resolve(idx)
-			})
-		}
-		reader.readAsArrayBuffer(data.fileBlob)
-	})
-	.catch(function(error){
-		console.error(error)
-	})
+			console.log(data);
+			resolve(data.result.webContentLink);
+		})
+		.catch(function(error){
+			console.error(error)
+		})
 	
 	})
 
@@ -695,35 +689,71 @@ async function saveParameterTexttoDropbox(parameter_text){
 }
 
 
-async function saveParameterstoGDrive() {
-	var user = gapi.auth2.getAuthInstance().currentUser.get();
-	var oauthToken = user.getAuthResponse(true).access_token;
+async function saveTextFiletoGDrive(saveDirectory, name, content) {
+	var folderIdList = await nameToId([saveDirectory]);
 
-	//file name/path 
-	var savepath = ENV.ParamFileName
-	//content to write 
-	//why would you include null in concatenating strings?
-	var datastr = JSON.stringify(TASK,null,' ');
-	console.log("saveParameterstoGDrive", datastr);
+	var folderId;
 
-	$.ajax({
-		url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=media",
-		type: "POST",
-		data: datastr,
-		beforeSend: function(xhr) {
-			xhr.setRequestHeader("Authorization", "Bearer " + oauthToken);
-			xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
-			//xhr.setRequestHeader("X-Upload-Content-Length", json_name.length);
-		},
-		success: function(data)  {
-			console.log(data);
-		},
-
-		error: function(data) {
-
-			console.log(data);
+	for (var i = 0; i < folderIdList.length; i++) {
+		if (folderIdList[i] != null) {
+			folderId = folderIdList[i];
+			break;
 		}
-	})
+	}
+
+	const boundary = '-------314159265358979323846';
+	const delimiter = "\r\n--" + boundary + "\r\n";
+	const close_delim = "\r\n--" + boundary + "--";
+
+	var metadata = {
+	    'name': name,
+	    'mimeType': 'text/plain\r\n\r\n',
+	    'parents': [folderId]
+	};
+
+	var multipartRequestBody = delimiter +  'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + delimiter + 'Content-Type: ' + 'text/plain\r\n\r\n' + content + close_delim;
+
+	gapi.client.request({
+	    'path': '/upload/drive/v3/files',
+	    'method': 'POST',
+	    'params': {
+	        'uploadType': 'multipart'
+	    },
+	    'headers': {
+	        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+	    },
+	    'body': multipartRequestBody
+	}).then(function(response){
+	    console.log(response);
+	});
+
+
+	// var user = gapi.auth2.getAuthInstance().currentUser.get();
+	// var oauthToken = user.getAuthResponse(true).access_token;
+
+	// var savepath = ENV.ParamFileName
+	
+	// var datastr = JSON.stringify(content,null,' ');
+	// console.log("saveParameterstoGDrive", datastr);
+
+	// $.ajax({
+	// 	url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=media",
+	// 	type: "POST",
+	// 	data: datastr,
+	// 	beforeSend: function(xhr) {
+	// 		xhr.setRequestHeader("Authorization", "Bearer " + oauthToken);
+	// 		xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+	// 		//xhr.setRequestHeader("X-Upload-Content-Length", json_name.length);
+	// 	},
+	// 	success: function(data)  {
+	// 		console.log("successfully uploaded text file", data);
+	// 	},
+
+	// 	error: function(data) {
+
+	// 		console.log("failed to upload text file", data);
+	// 	}
+	// })
 
 
 	/*try{
