@@ -296,11 +296,12 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	var soundtest = await nameToId(['au0', 'au1', 'au2', 'au3', 'au4', 'au5']);
 	console.log(soundtest);
 	console.log(soundtest.map(downloadFile));
-
-	soundpromises = sounds.serial.map(loadSoundfromDropbox2); //create array of sound load Promises
+	*/
+	console.log("sounds.serial", sounds.serial);
+	soundpromises = sounds.serial.map(loadSoundfromGDrive); //create array of sound load Promises
 	await Promise.all(soundpromises); //simultaneously evaluate array of sound load promises
 	updateStatusText("")
-	*/
+	
 	
 	//========= Start in TEST mode =======//
 	document.querySelector("button[name=doneTestingTask]").style.display = "block"

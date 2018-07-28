@@ -208,9 +208,9 @@ async function loadBagfromDropbox(imagebags_parameter){
 
 async function loadImageArrayfromGDrive(imagepathlist){
 	try{
+	//GoogleDrive 
 		console.log("imagepathlist", imagepathlist);
-		//is there a maximum number of images you can load from google drive? 
-		var MAX_SIMULTANEOUS_REQUESTS = 1 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
+		var MAX_SIMULTANEOUS_REQUESTS = 5 // Empirically chosen based on our guess of Dropbox API's download request limit in a "short" amount of time.
 		var MAX_TOTAL_REQUESTS = 3000 // Empirically chosen
 
 		if (imagepathlist.length > MAX_TOTAL_REQUESTS) {
@@ -599,7 +599,9 @@ async function pathToId(path)  {
 //================== LOAD AUDIO ==================//
 function loadSoundfromGDrive(src,idx){
 	return new Promise(function(resolve,reject){
-		dbx.filesDownload({path: SOUND_FILEPREFIX + src + ".wav"}).then(function(data){
+		var audioFileId = pathToId(SOUND_FILEPREFIX + src);
+		console.log("srcToId: ", audioFileId);
+		downloadFile(audioFileId).then(function(data){
 		var reader = new FileReader()
 		reader.onload = function(e){
 			audiocontext.decodeAudioData(reader.result).then(function(buffer){
@@ -612,7 +614,9 @@ function loadSoundfromGDrive(src,idx){
 	.catch(function(error){
 		console.error(error)
 	})
+	
 	})
+
 }
 
 
