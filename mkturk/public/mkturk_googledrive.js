@@ -618,14 +618,18 @@ async function loadSoundfromGDrive(src,idx){
 //================== WRITE JSON ==================//
 async function saveBehaviorDatatoGDrive(TASK, ENV, CANVAS, TRIAL){
 	try{
-        var dataobj = [] 
+        var dataobj = []; 
 
-		dataobj.push(ENV)
-		dataobj.push(CANVAS)
-		dataobj.push(TASK)
-		dataobj.push(TRIAL)
+		dataobj.push(ENV);
+		dataobj.push(CANVAS);
+		dataobj.push(TASK);
+		dataobj.push(TRIAL);
 		datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
+		directoryName = ENV.subject;
+		console.log("directoryName", directoryName);
 		console.log("datastr", datastr);
+
+		saveTextFiletoGDrive("mkturk_liz", "behavior", datastr);
 
 	}
 		// TODO: 
@@ -691,9 +695,8 @@ async function saveParameterTexttoDropbox(parameter_text){
 }
 
 //saves input text file with given content and name into a specific folder in the user's Google Drive
-async function saveTextFiletoGDrive(saveDirectory, name, content) {
+async function saveTextFiletoGDrive(saveDirectory, name, content, callback) {
 	var folderIdList = await nameToId([saveDirectory]);
-
 	var folderId;
 
 	for (var i = 0; i < folderIdList.length; i++) {
@@ -703,88 +706,77 @@ async function saveTextFiletoGDrive(saveDirectory, name, content) {
 		}
 	}
 
-	const boundary = '-------314159265358979323846';
-	const delimiter = "\r\n--" + boundary + "\r\n";
-	const close_delim = "\r\n--" + boundary + "--";
+	//if file doesn't already exist, create a new file 
+	if (nameToId(name) == null)  {
+		console.log("Text file doesn't exist. Creating new file");
+		const boundary = '-------314159265358979323846';
+		const delimiter = "\r\n--" + boundary + "\r\n";
+		const close_delim = "\r\n--" + boundary + "--";
 
-	var metadata = {
-	    'name': name,
-	    'mimeType': 'text/plain\r\n\r\n',
-	    'parents': [folderId]
-	};
+		var metadata = {
+		    'name': name,
+		    'mimeType': 'text/plain\r\n\r\n',
+		    'parents': [folderId]
+		};
 
-	var multipartRequestBody = delimiter +  'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + delimiter + 'Content-Type: ' + 'text/plain\r\n\r\n' + content + close_delim;
+		var multipartRequestBody = delimiter +  'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + delimiter + 'Content-Type: ' + 'text/plain\r\n\r\n' + content + close_delim;
 
-	gapi.client.request({
-	    'path': '/upload/drive/v3/files',
-	    'method': 'POST',
-	    'params': {
-	        'uploadType': 'multipart'
-	    },
-	    'headers': {
-	        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
-	    },
-	    'body': multipartRequestBody
-	}).then(function(response){
-	    console.log(response);
-	});
+		gapi.client.request({
+		    'path': '/upload/drive/v3/files',
+		    'method': 'POST',
+		    'params': {
+		        'uploadType': 'multipart'
+		    },
+		    'headers': {
+		        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+		    },
+		    'body': multipartRequestBody
+		}).then(function(response){
+		    console.log(response);
+		});
+	}
 
+	//otherwise, overwrite
+	else {
+		var fileIdList = await nameToId(name);
 
-	// var user = gapi.auth2.getAuthInstance().currentUser.get();
-	// var oauthToken = user.getAuthResponse(true).access_token;
-
-	// var savepath = ENV.ParamFileName
-	
-	// var datastr = JSON.stringify(content,null,' ');
-	// console.log("saveParameterstoGDrive", datastr);
-
-	// $.ajax({
-	// 	url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=media",
-	// 	type: "POST",
-	// 	data: datastr,
-	// 	beforeSend: function(xhr) {
-	// 		xhr.setRequestHeader("Authorization", "Bearer " + oauthToken);
-	// 		xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
-	// 		//xhr.setRequestHeader("X-Upload-Content-Length", json_name.length);
-	// 	},
-	// 	success: function(data)  {
-	// 		console.log("successfully uploaded text file", data);
-	// 	},
-
-	// 	error: function(data) {
-
-	// 		console.log("failed to upload text file", data);
-	// 	}
-	// })
-
-
-	/*try{
-		//file name/path 
-		var savepath = ENV.ParamFileName
-		//content to write 
-	    var datastr = JSON.stringify(TASK,null,' ');
-
-	    //googledrive api create file
-	    //with given parameters 
-		response = await dbx.filesUpload({
-			path: savepath,
-			contents: datastr,
-			mode: {[".tag"]: "overwrite"} })
-		//edit metadata 
-		filemeta = await dbx.filesGetMetadata({path: savepath})
-		if (ENV.ParamFileRev != filemeta.rev){
-			ENV.ParamFileRev = filemeta.rev
-			ENV.ParamFileDate = new Date(filemeta.client_modified)	
+		for (var i = 0; i < fileIdList.length; i++) {
+		if (fileIdList[i] != null) {
+			fileId = fileIdList[i];
+			break;
+			}
 		}
-		console.log("TASK written to disk as "+ENV.ParamFileName+". Size: " + response.size)
-		return 0; //need2saveParameters
-	}
-	catch (error){
-		console.error(error)
-		return 1 //need2saveParameters
-	}
 
-	*/
+		console.log("Text file already exists. Overwriting contents");
+	   
+	    const boundary = '-------314159265358979323846';
+	    const delimiter = "\r\n--" + boundary + "\r\n";
+	    const close_delim = "\r\n--" + boundary + "--";
+
+	    var contentType = "text/html";
+	   	
+	   	var metadata = {
+		    'mimeType': 'text/plain\r\n\r\n',
+		};
+
+	   	var multipartRequestBody = delimiter +  'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + delimiter + 'Content-Type: ' + 'text/plain\r\n\r\n' + content + close_delim;
+
+	    if (!callback) { callback = function(file) { console.log("Update Complete ",file) }; }
+
+	    gapi.client.request({
+	        'path': 'https://www.googleapis.com/upload/drive/v3/files/' + fileId,
+	        'method': 'PATCH',
+	        'params': {
+	        	'fileId': fileId, 
+	        	'uploadType': 'multipart'
+	        },
+	        'headers': {'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
+	    	},
+	        'body': multipartRequestBody,
+	        callback:callback,
+	    });
+
+	}
 }
 
 //================== WRITE JSON (end) ==================//

@@ -182,6 +182,13 @@ function sleep(ms) {
 }
 
 async function playSound(idx){
+  audiocontext.resume();
+  if (idx==0){
+    gainNode.gain.value=0.15; //set boost pedal to 15% volume
+  }
+  else if (idx==2 | idx==3){
+    gainNode.gain.value=0.15; //set boost pedal to 5% volume
+  }
   audio_tag[idx].play();                       // play the source now
 }
 

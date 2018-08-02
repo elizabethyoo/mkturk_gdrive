@@ -154,6 +154,12 @@ function doneEditingParams_listener(event){
 	waitforClick.next(1);
 	return
 }
+
+function buttonDisappear()  {
+	var counter=0;
+    document.getElementById("doneEditingParams").style.visibility = "hidden";
+}
+
 function headsuptext_listener(event){
 	FLAGS.need2saveParameters = 1
 	return
