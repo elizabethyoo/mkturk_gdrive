@@ -182,18 +182,7 @@ function sleep(ms) {
 }
 
 async function playSound(idx){
-  soundpromises = [];
-  var sound = await loadSoundfromGDrive(sounds.serial[idx], idx);
-  soundpromises.push(sound);
-  audio_tag = document.getElementById("au" + sounds.serial[idx]);
-  source_tag = document.getElementById("src" + sounds.serial[idx]);
-
-  source_tag.src = sound;
-  audio_tag.load();
-  console.log(sound);
-  console.log(source_tag);
-  console.log(audio_tag);
-  audio_tag.play();                       // play the source now
+  audio_tag[idx].play();                       // play the source now
 }
 
 /*
