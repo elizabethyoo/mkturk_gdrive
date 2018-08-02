@@ -616,7 +616,7 @@ async function loadSoundfromGDrive(src,idx){
 
 
 //================== WRITE JSON ==================//
-async function saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL){
+async function saveBehaviorDatatoGDrive(TASK, ENV, CANVAS, TRIAL){
 	try{
         var dataobj = [] 
 
@@ -625,21 +625,23 @@ async function saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL){
 		dataobj.push(TASK)
 		dataobj.push(TRIAL)
 		datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
+		console.log("datastr", datastr);
 
+	}
 		// TODO: 
 		// Check if folder ENV.DataFileName exists 
 		// If not, create it for this subjectID using dbx.filesCreateFolder (see: http://dropbox.github.io/dropbox-sdk-js/Dropbox.html#filesCreateFolder__anchor)
 
-		response = await dbx.filesUpload({
-			path: ENV.DataFileName,
-			contents: datastr,
-			mode: {[".tag"]: "overwrite"} })
-			CURRTRIAL.lastDropboxSave = new Date(response.client_modified)
-			console.log("Successful behavior file upload. Size:" + response.size)
-		}
-	catch(error){
-		console.error(error)
-	}
+	// 	response = await dbx.filesUpload({
+	// 		path: ENV.DataFileName,
+	// 		contents: datastr,
+	// 		mode: {[".tag"]: "overwrite"} })
+	// 		CURRTRIAL.lastDropboxSave = new Date(response.client_modified)
+	// 		console.log("Successful behavior file upload. Size:" + response.size)
+	// 	}
+	 catch(error){
+	 	console.error(error)
+	 }
 }
 
 async function saveParameterTexttoDropbox(parameter_text){
@@ -688,7 +690,7 @@ async function saveParameterTexttoDropbox(parameter_text){
 	}
 }
 
-
+//saves input text file with given content and name into a specific folder in the user's Google Drive
 async function saveTextFiletoGDrive(saveDirectory, name, content) {
 	var folderIdList = await nameToId([saveDirectory]);
 

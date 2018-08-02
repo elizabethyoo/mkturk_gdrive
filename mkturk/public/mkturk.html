@@ -639,7 +639,7 @@ while(true){
 	}
 	//============ (end) DELIVER REWARD/PUNISH ============//
 
-	saveTextFiletoGDrive("mkturk_liz", "blahblah");
+	//saveTextFiletoGDrive("mkturk_liz", "blahblah");
 
 	//================= HOUSEKEEPING =================//
 	CURRTRIAL.lastTrialCompleted = new Date()
@@ -655,7 +655,7 @@ while(true){
 		}
 
 		// Save data asynchronously
-		saveBehaviorDatatoDropbox(TASK, ENV, CANVAS, TRIAL);
+		saveBehaviorDatatoGDrive(TASK, ENV, CANVAS, TRIAL);
 	}
 
 	if (FLAGS.need2saveParameters == 1){
