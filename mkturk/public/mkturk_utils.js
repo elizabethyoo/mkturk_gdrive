@@ -181,6 +181,22 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function playSound(idx){
+  soundpromises = [];
+  var sound = await loadSoundfromGDrive(sounds.serial[idx], idx);
+  soundpromises.push(sound);
+  audio_tag = document.getElementById("au" + sounds.serial[idx]);
+  source_tag = document.getElementById("src" + sounds.serial[idx]);
+
+  source_tag.src = sound;
+  audio_tag.load();
+  console.log(sound);
+  console.log(source_tag);
+  console.log(audio_tag);
+  audio_tag.play();                       // play the source now
+}
+
+/*
 
 // Async: play sound
 async function playSound(idx){
@@ -198,6 +214,9 @@ async function playSound(idx){
   // source.connect(audiocontext.destination);       // connect the source to the context's destination (the speakers)
   source.start(0);                        // play the source now
 }
+*/
+
+
 // Promise: dispense reward (through audio control)
 function dispenseReward(){
   console.log('Legacy dispense reward')

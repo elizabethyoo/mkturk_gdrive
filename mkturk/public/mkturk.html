@@ -315,20 +315,28 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	console.log(soundtest);
 	console.log(soundtest.map(downloadFile));
 	*/
+
+
+	/*
 	soundpromises = [];
+	audio_tag = [];
+	source_tag = [];
 	for (var i = 0; i < sounds.serial.length; i++)  {
 		var sound = await loadSoundfromGDrive(sounds.serial[i], i);
 		soundpromises.push(sound);
-		audio_tag = document.getElementById("au" + sounds.serial[i]);
-		source_tag = document.getElementById("src" + sounds.serial[i]);
+		audio_tag[i] = document.getElementById("au" + sounds.serial[i]);
+		source_tag[i] = document.getElementById("src" + sounds.serial[i]);
 
 		source_tag.src = sound;
 		audio_tag.load();
 		console.log(sound);
 		console.log(source_tag);
 		console.log(audio_tag);
+		console.log()
 		//audio_tag.play();
 	}
+	audio_tag.play();
+	*/
 	updateStatusText("")
 	
 	
