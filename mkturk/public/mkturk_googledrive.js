@@ -179,33 +179,6 @@ async function getImageListDropboxRecursive(dirpath){
 }
 
 //================== LOAD IMAGE ==================//
-async function loadBagfromDropbox(imagebags_parameter){
-
-	// Locate all .png in directory and subdirectories specified in imagebags_parameter
-	// Return in ONE 1-dimensional array, along with label vector that indexes given imagbags_order
-	try{
-		var funcreturn = await loadImageBagPaths(imagebags_parameter); 
-	}
-	catch(error){
-		console.log('Path loading failed', error)
-	}
-	var imagebag_paths = funcreturn[0]
-	var imagebag_labels = funcreturn[1] 
-
-	// Load all .png blobs into an array. 
-	// Todo: fix array load (promises elements aren't actually fulfilled)
-	try{
-		var imagebag = await loadImageArrayfromGDrive(imagebag_paths)
-	}
-	catch(error){
-		console.log('Image array load failed', error)
-	}
-
-	console.log('Done loading bag: '+imagebag.length+' out of '+imagebag_paths.length+ ' images loaded successfully.')
-	return [imagebag, imagebag_labels, imagebag_paths]
-}
-
-
 async function loadImageArrayfromGDrive(imagepathlist){
 	try{
 	//GoogleDrive 
@@ -239,7 +212,8 @@ async function loadImageArrayfromGDrive(imagepathlist){
 			}
 			
 		}
-		else { // If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
+		else { 
+			// If number of images is less than MAX_SIMULTANEOUS_REQUESTS, request them all simultaneously: 
 			//var image_requests = [] 
 			//image_requests = imagepathlist.map(loadImagefromGDrive)
 			//var image_array = await Promise.all(image_requests) 
@@ -249,9 +223,7 @@ async function loadImageArrayfromGDrive(imagepathlist){
 			//	console.log(j)
 			//	image_array.push(loadImagefromGDrive(imagepathlist[j])) // test with no awaits
 			//}
-
 			var image_requests = imagepathlist.map(loadImagefromGDrive); 
-			
 			var image_array = await Promise.all(image_requests)
 		}
 		return image_array
@@ -270,18 +242,19 @@ async function loadImagefromGDrive(imagepath){
 	return new Promise(
 		function(resolve, reject){
 			try{
-					
+				
 				downloadFile(imagepath).then( 
 					function(data){
 						console.log("imagepath_data", data);
+
 						console.log("data.result.webContentLink", data.result.webContentLink);
 						var data_src = data.result.webContentLink 
 						//window.URL.createObjectURL(data.result.webContentLink); 	
 						var image = new Image(); 
-
+						var imageName = data.result.name; 
 						image.onload = function(){
-							console.log('Loaded: ' + (imagepath));
-							updateImageLoadingAndDisplayText('Loaded: ' + imagepath)
+							console.log('Loaded: ' + (imageName));
+							updateImageLoadingAndDisplayText('Loaded: ' + imageName)
 							resolve(image)
 							}
 						image.src = data_src
@@ -308,13 +281,9 @@ async function checkParameterFileStatus(){
 		var fileId = await loadParametersfromGDrive(ENV.ParamFileName);
 		console.log("fileId", fileId);
 
-		//var filemeta = await downloadFile(fileId);
-		//console.log("checkParamsStatus filemeta", filemeta);
 		
-		if (oldRev != ENV.ParamFileRev){
-	
+		if (oldRev != ENV.ParamFileRev){	
 			FLAGS.need2loadParameters = 1
-
 			console.log('Parameter file on disk was changed. New rev =' + ENV.ParamFileRev)
 		}
 		
@@ -622,14 +591,17 @@ async function saveBehaviorDatatoGDrive(TASK, ENV, CANVAS, TRIAL){
 
 		dataobj.push(ENV);
 		dataobj.push(CANVAS);
+
 		dataobj.push(TASK);
 		dataobj.push(TRIAL);
-		datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
-		directoryName = ENV.subject;
+		var datastr = JSON.stringify(dataobj); //no pretty print for now, saves space and data file is unwieldy to look at for larger numbers of trials
+		var behaviorDirectory = ENV.subject;
+		var behaviorName = ENV.subject + "_data_" + ENV.CurrentDate;  
+
 		console.log("directoryName", directoryName);
 		console.log("datastr", datastr);
 
-		saveTextFiletoGDrive("mkturk_liz", "behavior", datastr);
+		saveTextFiletoGDrive(behaviorDirectory, behaviorName, datastr);
 
 	}
 		// TODO: 
@@ -648,7 +620,7 @@ async function saveBehaviorDatatoGDrive(TASK, ENV, CANVAS, TRIAL){
 	 }
 }
 
-async function saveParameterTexttoDropbox(parameter_text){
+async function saveParameterstoGDrive(parameter_text){
 	try{
 	    datastr = parameter_text
 
@@ -656,15 +628,35 @@ async function saveParameterTexttoDropbox(parameter_text){
 	    var i = 1; 
 	    var timeout_seed =  1000; 
 	    var max_retries = 10; 
+	    var paramsDirectory = await pathToId(PARAM_DIRPATH);
+		var paramsName = ENV.subject; 
+		var paramsId;
+		var paramsList = await nameToId(paramsName);
+		for (var i = 0; i < paramsList.length; i++) {
+		if (folderIdList[i] != null) {
+			paramsId = paramsList[i];
+			break;
+			}
+		}
+
 
 	    while(!success && i < max_retries){
 	    	try{
+				/*
 				response = await dbx.filesUpload({
 					path: ENV.ParamFileName,
 					contents: datastr,
 					mode: {[".tag"]: "overwrite"} })
 						console.log("Successful parameter text upload. Size: " + response.size)
 						FLAGS.need2saveParameters = 0;
+
+
+
+						*/
+	
+				console.log("Save params file in paramsDirectory  = " + paramsDirectory); 
+				FLAGS.need2saveParameters = 0;
+				saveTextFiletoGDrive(paramsDirectory, name, content, callback);
 			}
 			catch(error){
 				console.log(error)
@@ -681,12 +673,36 @@ async function saveParameterTexttoDropbox(parameter_text){
 	}
 
 	try{
-		filemeta = await dbx.filesGetMetadata({path: ENV.ParamFileName})
-			if (ENV.ParamFileRev != filemeta.rev){
-				ENV.ParamFileRev = filemeta.rev
-				ENV.ParamFileDate = new Date(filemeta.client_modified)
+		/*
+		async function checkParameterFileStatus(){
+			try{
+				var oldRev = ENV.ParamFileRev;
+				var oldDate = ENV.ParamFileDate;
+				console.log("ENV.ParamFileName", ENV.ParamFileName);
+				var fileId = await loadParametersfromGDrive(ENV.ParamFileName);
+				console.log("fileId", fileId);
 
-				console.log('Parameter file was updated. Rev=' + ENV.ParamFileRev)
+				
+				if (oldRev != ENV.ParamFileRev){	
+					FLAGS.need2loadParameters = 1
+					console.log('Parameter file on disk was changed. New rev =' + ENV.ParamFileRev)
+				}
+				
+			}
+			catch(error) {
+				console.error(error)
+			}
+				}
+		*/
+		var oldParamFileRev  = ENV.ParamFileRev;
+		var oldParamFileDate = ENV.ParamFileDate;
+		filemeta = await downloadFile(paramsName);
+			if (oldParamFileRev != ENV.ParamFileRev){
+				//Note: GDrive's version of 'Revision' (as defined by Dropbox) is 'Version' e.g. filemeta.ver 
+				ENV.ParamFileRev = filemeta.ver;
+				ENV.ParamFileDate = new Date(filemeta.client_modified);
+
+				console.log('Parameter file was updated. Ver=' + ENV.ParamFileRev);
 			}
 	}
 	catch(error) {
@@ -698,7 +714,7 @@ async function saveParameterTexttoDropbox(parameter_text){
 async function saveTextFiletoGDrive(saveDirectory, name, content, callback) {
 	var folderIdList = await nameToId([saveDirectory]);
 	var folderId;
-
+	//search Google Drive by folder name, get a list of folder IDs and select the first nonempty element (In Google Drive folders/files are not uniquely defined by name, only by ID)
 	for (var i = 0; i < folderIdList.length; i++) {
 		if (folderIdList[i] != null) {
 			folderId = folderIdList[i];

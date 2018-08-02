@@ -10,7 +10,7 @@
 <link rel="icon" href="mkturklogo48.png">
 
 <script src="mkturk_installsettings.js"></script>
-<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+<!--<script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>-->
 
 </head>
 
@@ -218,7 +218,6 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	ENV.ParamFileName = ENV.Subject + "_params.json";
 	await loadParametersfromGDrive(ENV.ParamFileName);
 	console.log("ENV.ParamFileName" +  ENV.ParamFileName);
-
 	
 	
 	//================== AWAIT USER CAN EDIT SUBJECT PARAMS ==================//
@@ -231,9 +230,9 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	//document.querySelector("button[name=doneEditingParams]").style.visibility = "visible"
 
 	await editParamsPromise()
-	console.log("MERP window.test_data", window.test_data);
 	var paramsButton = document.getElementById("doneEditingParams");
-
+	//
+	paramsButton.style.display = "hidden"
 	document.querySelector("button[name=doneEditingParams]").style.display = "hidden"
 	var textobj = document.getElementById("headsuptext")
 
@@ -247,8 +246,8 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 
 	if (FLAGS.need2saveParameters == 1){
 		var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
-		await saveParameterTexttoDropbox(user_param_text) //write new params
-		await loadParametersfromDropbox(ENV.ParamFileName) //then read them
+		await saveParameterstoGDrive(user_param_text) //write new params
+		await loadParametersfromGDrive(ENV.ParamFileName) //then read them
 	}
 	ble.statustext=""
 	
@@ -389,16 +388,6 @@ while(true){
 		FLAGS.purge = 0; 
 	} //if purge
 
-
-	//============ CREATE IMAGE BAG & DISPLAY GRID ============//
-
-	/*Create image tags recursively for all images in Dropbox
-		for (var i = 1; i < 5; i++) {
-    		var img = document.createElement("img");
-    		img.src = "images/pics/imageTab0" + i;
-    		imageTabsDiv.appendChild(img);
-		}
-		*/
 
 
 	if (FLAGS.need2loadImages == 1){
@@ -658,8 +647,10 @@ while(true){
 		saveBehaviorDatatoGDrive(TASK, ENV, CANVAS, TRIAL);
 	}
 
+	//FOR TESTING PARAMETERSTOGDRIVE DELETE WHEN DONE 
+	saveParameterstoGDrive();
 	if (FLAGS.need2saveParameters == 1){
-		FLAGS.need2saveParameters = saveParameterstoDropbox(); // Save parameters asynchronously
+		FLAGS.need2saveParameters = saveParameterstoGDrive(); // Save parameters asynchronously
 	}
 
 	//FLAGS.need2loadParameters=1: reload task which automatically creates a new data file

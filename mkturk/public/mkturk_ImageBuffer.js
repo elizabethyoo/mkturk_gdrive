@@ -58,7 +58,6 @@ async cache_these_images(imagenames){
 
 		if (typeof(imagenames) == "string"){
 			var filename = imagenames; 
-			console.log("BLAH");
 			if (!(filename in this.cache_dict)){
 
 				var image = await loadImagefromGDrive(filename); 
@@ -72,7 +71,6 @@ async cache_these_images(imagenames){
 		}
 
 		else if (typeof(imagenames) == "object"){
-			console.log("MWAH");
 			var requested_imagenames = []
 			for (var i = 0; i < imagenames.length; i ++){
 				var filename = imagenames[i]
