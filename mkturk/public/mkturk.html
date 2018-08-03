@@ -247,6 +247,7 @@ textobj.addEventListener('mouseup',headsuptext_listener,false)
 	if (FLAGS.need2saveParameters == 1){
 		var user_param_text = document.getElementById("headsuptext").innerHTML //get new params
 		await saveParameterstoGDrive(user_param_text) //write new params
+		console.log("HELLO EDITING PARAMETERS");
 		await loadParametersfromGDrive(ENV.ParamFileName) //then read them
 	}
 	ble.statustext=""
@@ -647,8 +648,7 @@ while(true){
 		saveBehaviorDatatoGDrive(TASK, ENV, CANVAS, TRIAL);
 	}
 
-	//FOR TESTING PARAMETERSTOGDRIVE DELETE WHEN DONE 
-	saveParameterstoGDrive();
+	
 	if (FLAGS.need2saveParameters == 1){
 		FLAGS.need2saveParameters = saveParameterstoGDrive(); // Save parameters asynchronously
 	}
